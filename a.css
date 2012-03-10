@@ -101,17 +101,18 @@ a img { border: none; }
 .posts dl{
     width:100%;
     min-height:100px;*+height:100%;_height:100px;
-    display:block;
     border:1px solid #eee;
     padding:5px;
 }
 .posts dl dt{
-    width:90%;
+    width:100%;
     font:1em #aaa;
+    padding:5px;
 }
 .posts dl dd{
-    width:90%;
+    width:100%;
     font:1em #eee;
+    padding:5px;
 }
 
 .footer{
