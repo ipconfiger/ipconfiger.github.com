@@ -114,10 +114,6 @@ dl{
     clear:both;
     margin-bottom:5px;
     float:left;
-    border:1px solid #afafaf;
-    width:600px;
-    height:80px;
-    display:block;
 }
 dt,dd{
     padding:2px 5px;float:left;
