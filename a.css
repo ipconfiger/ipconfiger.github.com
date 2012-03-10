@@ -123,10 +123,10 @@ dl{
     border:1px solid #EFEFEF;
 }
 dt{
-    padding:20px 5px;border-bottom:1px solid #efefef;
+    padding:5px 20px;border-bottom:1px solid #efefef;
     font-size:1em;
 }
-dd{ padding:20px 5px;}
+dd{ padding:5px 20px;}
 
 .footer{
     padding:10px;
