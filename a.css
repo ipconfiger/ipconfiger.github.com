@@ -87,10 +87,19 @@ a img { border: none; }
 .side{
     width:280px;
     min-height:400px;*+height:100%;_height:400px;
+    padding:10px;
 }
 .posts{
     min-height:400px;*+height:100%;_height:400px;
+    padding:10px;
 }
+.posts dl{
+    width:100%;
+    min-height:100px;*+height:100%;_height:100px;
+    display:block;
+    border:1px solid #eee;
+}
+
 .footer{
     padding:10px;
 }
