@@ -73,6 +73,7 @@ a img { border: none; }
      }
 
 .fl {float:left}
+.fr {float:right}
 
 .header {
     height:120px;
