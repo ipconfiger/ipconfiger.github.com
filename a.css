@@ -85,7 +85,7 @@ a img { border: none; }
 .content{}
 
 .side{
-    width:280px;
+    width:200px;
     min-height:400px;*+height:100%;_height:400px;
     padding:10px;
 }
