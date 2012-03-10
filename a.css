@@ -86,7 +86,7 @@ a img { border: none; }
 
 .side{
     width:200px;
-    min-height:400px;*+height:100%;_height:400px;
+    min-height:300px;*+height:100%;_height:300px;
     padding:10px;
 }
 .posts{
@@ -100,7 +100,7 @@ a img { border: none; }
     border:1px solid #eee;
     padding:5px;
 }
-.posts dl .title{
+.posts dl dt{
     width:100%;
     font:1em #aaa;
 }
