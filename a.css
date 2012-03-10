@@ -110,6 +110,7 @@ a img { border: none; }
     background:#DAF;
 }
 .wrapper{
+    position:absolute;
     clear:both;
     padding:10px;
 }
