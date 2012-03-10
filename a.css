@@ -47,6 +47,8 @@ a img { border: none; }
 
 .header {
     height:120px;
+    width:960px;
+    display:block;
     margin-left:auto;
     margin-right:auto;
     line-height:120px;
@@ -61,3 +63,10 @@ a img { border: none; }
     width:280px;
     background:#DFA;
 }
+.posts{
+    background:#ADF;
+}
+.footer{
+    background:#EDF;
+}
+
