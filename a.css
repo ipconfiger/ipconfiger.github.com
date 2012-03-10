@@ -98,6 +98,11 @@ a img { border: none; }
     min-height:100px;*+height:100%;_height:100px;
     display:block;
     border:1px solid #eee;
+    padding:5px;
+}
+.post dl .title{
+    width:100%;
+    font:1em #aaa;
 }
 
 .footer{
