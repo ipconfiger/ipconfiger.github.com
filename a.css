@@ -117,10 +117,11 @@ a img { border: none; }
 }
 
 dl{
-    width:100%;
+    width:738%;
     clear:both;
     margin-bottom:5px;
     float:left;
+    border:1px solid #EFEFEF;
 }
 dt,dd{
     padding:2px 5px;float:left;
