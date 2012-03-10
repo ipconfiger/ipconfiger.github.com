@@ -50,7 +50,12 @@ a img { border: none; }
 
 .main {  margin:0 auto;  width:970px; padding-top:10px; }
 
-.clear {clear:both;}
+.clear {clear:both;
+    font-size: 0;
+    height: 0;
+    overflow: hidden;
+}
+
 .clearfix, .main{ display:block;} 
 
 .clearfix:after, .main:after {
