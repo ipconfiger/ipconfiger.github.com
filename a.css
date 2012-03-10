@@ -29,6 +29,14 @@ a img { border: none; }
 
 /****************The above is reset all style to default*****************/
 
+
+.mt10{margin-top:10px}
+.mt20{margin-top:20px}
+.mt30{margin-top:30px}
+.mt40{margin-top:40px}
+.mt50{margin-top:50px}
+.mt60{margin-top:60px}
+
 .main {  margin:0 auto;  width:970px; padding-top:10px; }
 
 .clear {clear:both;}
@@ -47,7 +55,7 @@ a img { border: none; }
 
 .header {
     height:120px;
-    width:960px;
+    width:970px;
     margin-left:auto;
     margin-right:auto;
     background:#ccc;
@@ -55,6 +63,7 @@ a img { border: none; }
 
 .header a{
     font:2em bold;
+
 }
 
 .content{
