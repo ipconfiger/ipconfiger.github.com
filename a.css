@@ -87,7 +87,7 @@ a img { border: none; }
     color:red;
 }
 
-.content{}
+.content{ width:100%; }
 
 .side{
     width:200px;
