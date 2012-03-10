@@ -100,12 +100,12 @@ a img { border: none; }
     border:1px solid #eee;
     padding:5px;
 }
-.post dl .title{
+.posts dl .title{
     width:100%;
     font:1em #aaa;
     display:block;
 }
-.post dd{
+.posts dd{
     width:100%;
     font:1em #eee;
     display:block;
