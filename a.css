@@ -103,12 +103,10 @@ a img { border: none; }
 .posts dl .title{
     width:100%;
     font:1em #aaa;
-    display:block;
 }
-.posts dd{
+.posts dl dd{
     width:100%;
     font:1em #eee;
-    display:block;
 }
 
 .footer{
