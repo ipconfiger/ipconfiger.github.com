@@ -87,7 +87,12 @@ a img { border: none; }
     color:red;
 }
 
-.content{ width:100%; }
+.content{
+    width:970px;
+    margin-left:auto;
+    margin-right:auto;
+    min-height:350px;*+height:100%;_height:350px;
+}
 
 .side{
     width:200px;
