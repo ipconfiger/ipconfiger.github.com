@@ -98,10 +98,12 @@ a img { border: none; }
     width:200px;
     min-height:300px;*+height:100%;_height:300px;
     padding:10px;
+    background:#FAD;
 }
 .posts{
     min-height:400px;*+height:100%;_height:400px;
     padding:10px;
+    background:#DAF;
 }
 .posts dl{
     clear:both;
