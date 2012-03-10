@@ -29,6 +29,8 @@ a img { border: none; }
 
 /****************The above is reset all style to default*****************/
 
+.main {  margin:0 auto;  width:970px; padding-top:10px; }
+
 .clear {clear:both;}
 .clearfix, .main{ display:block;} 
 
@@ -83,5 +85,20 @@ a img { border: none; }
 .m390 {margin-left:390px}
 .m400 {margin-left:400px}
 
-
-.header { width:960px;height:120px; margin-left:auto;margin-right:auto;background:#ccc }
+.header {
+    width:960px;
+    height:120px;
+    margin-left:auto;
+    margin-right:auto;
+    line-height:120px;
+    text-align:center;
+    background:#ccc;
+    font:120em bold;
+}
+.content{
+    background:#FD8;
+}
+.side{
+    width:280px;
+    background:#DFA;
+}
