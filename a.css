@@ -37,6 +37,17 @@ a img { border: none; }
 .mt50{margin-top:50px}
 .mt60{margin-top:60px}
 
+.ml20{margin-left:20px}
+.ml40{margin-left:40px}
+.ml60{margin-left:60px}
+.ml80{margin-left:80px}
+.ml100{margin-left:100px}
+.ml120{margin-left:120px}
+.ml140{margin-left:140px}
+.ml160{margin-left:160px}
+.ml180{margin-left:180px}
+.ml200{margin-left:200px}
+
 .main {  margin:0 auto;  width:970px; padding-top:10px; }
 
 .clear {clear:both;}
