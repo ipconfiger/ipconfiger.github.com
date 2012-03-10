@@ -110,6 +110,19 @@ a img { border: none; }
     min-height:400px;*+height:100%;_height:400px;
     background:#DAF;
 }
+dl{
+    clear:both;
+    margin-bottom:5px;
+    float:left;
+    border:1px solid #afafaf;
+    width:600px;
+    height:80px;
+    display:block;
+}
+dt,dd{
+    padding:2px 5px;float:left;
+}
+dd{ position:absolute; right:5px;}
 
 .footer{
     padding:10px;
