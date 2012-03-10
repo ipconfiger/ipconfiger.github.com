@@ -102,7 +102,6 @@ a img { border: none; }
 .side{
     width:200px;
     min-height:300px;*+height:100%;_height:300px;
-    padding:10px;
     background:#FAD;
 }
 .posts{
@@ -110,6 +109,11 @@ a img { border: none; }
     min-height:400px;*+height:100%;_height:400px;
     background:#DAF;
 }
+.wrapper{
+    clear:both;
+    padding:10px;
+}
+
 dl{
     clear:both;
     margin-bottom:5px;
