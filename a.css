@@ -108,11 +108,13 @@ a img { border: none; }
     width:100%;
     font:1em #aaa;
     padding:5px;
+    position:absolute;
 }
 .posts dl dd{
     width:100%;
     font:1em #eee;
     padding:5px;
+    position:absolute;
 }
 
 .footer{
