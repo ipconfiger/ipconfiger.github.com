@@ -106,9 +106,8 @@ a img { border: none; }
     background:#FAD;
 }
 .posts{
-    width:100%;
+    width:738px;
     min-height:400px;*+height:100%;_height:400px;
-    padding:10px;
     background:#DAF;
 }
 .posts dl{
