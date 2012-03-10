@@ -1,0 +1,87 @@
+html, body, div, span, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, code,
+del, dfn, em, img, q, dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-weight: inherit;
+  font-style: inherit;
+  font-size: 100%;
+  font-family: inherit;
+  vertical-align: baseline;
+}
+
+
+/* Tables still need 'cellspacing="0"' in the markup. */
+table { border-collapse: separate; border-spacing: 0; }
+caption, th, td { text-align: left; font-weight: normal; }
+table, td, th { vertical-align: middle; }
+
+/* Remove possible quote marks (") from <q>, <blockquote>. */
+blockquote:before, blockquote:after, q:before, q:after { content: ""; }
+blockquote, q { quotes: "" ""; }
+
+/* Remove annoying border on linked images. */
+a img { border: none; }
+
+/****************The above is reset all style to default*****************/
+
+.clear {clear:both;}
+.clearfix, .main{ display:block;} 
+
+.clearfix:after, .main:after {
+     visibility: hidden;
+     display: block;
+     font-size: 0;
+     content: " ";
+     clear: both;
+     height: 0;
+     }
+
+.fl {float:left}
+.m10 {margin-left:10px}
+.m20 {margin-left:20px}
+.m30 {margin-left:30px}
+.m40 {margin-left:40px}
+.m50 {margin-left:50px}
+.m60 {margin-left:60px}
+.m70 {margin-left:75px}
+.m80 {margin-left:80px}
+.m90 {margin-left:90px}
+.m100 {margin-left:100px}
+.m110 {margin-left:110px}
+.m120 {margin-left:120px}
+.m130 {margin-left:130px}
+.m140 {margin-left:140px}
+.m150 {margin-left:150px}
+.m160 {margin-left:160px}
+.m170 {margin-left:170px}
+.m180 {margin-left:180px}
+.m190 {margin-left:190px}
+.m200 {margin-left:200px}
+.m210 {margin-left:210px}
+.m220 {margin-left:220px}
+.m230 {margin-left:230px}
+.m240 {margin-left:240px}
+.m250 {margin-left:250px}
+.m260 {margin-left:260px}
+.m270 {margin-left:270px}
+.m280 {margin-left:280px}
+.m290 {margin-left:290px}
+.m300 {margin-left:300px}
+.m310 {margin-left:310px}
+.m320 {margin-left:320px}
+.m330 {margin-left:330px}
+.m340 {margin-left:340px}
+.m350 {margin-left:350px}
+.m360 {margin-left:360px}
+.m370 {margin-left:370px}
+.m380 {margin-left:380px}
+.m390 {margin-left:390px}
+.m400 {margin-left:400px}
+
+
+.header { width:960px;height:120px; margin-left:auto;margin-right:auto;background:#ccc }
