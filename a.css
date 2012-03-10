@@ -110,14 +110,7 @@ a img { border: none; }
     min-height:400px;*+height:100%;_height:400px;
     background:#DAF;
 }
-.posts dl{
-    clear:both;
-    width:738px;
-    display:block;
-    min-height:100px;*+height:100%;_height:100px;
-    border:1px solid #eee;
-    padding:5px;
-}
+
 .footer{
     padding:10px;
 }
