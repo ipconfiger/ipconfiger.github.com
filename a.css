@@ -123,9 +123,9 @@ dl{
     border:1px solid #EFEFEF;
 }
 dt{
-    padding:2px 5px;float:left;width:200px;
+    padding:20px 10px;border:0px 0px 1px 0px solid #efefef;
 }
-dd{ margin-left:220px;padding 2px 5px;}
+dd{ padding 20px 5px;}
 
 .footer{
     padding:10px;
