@@ -101,11 +101,11 @@ a img { border: none; }
     padding:5px;
 }
 .posts dl dt{
-    width:100%;
+    width:90%;
     font:1em #aaa;
 }
 .posts dl dd{
-    width:100%;
+    width:90%;
     font:1em #eee;
 }
 
