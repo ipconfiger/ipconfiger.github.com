@@ -106,13 +106,14 @@ a img { border: none; }
     background:#FAD;
 }
 .posts{
+    width:100%;
     min-height:400px;*+height:100%;_height:400px;
     padding:10px;
     background:#DAF;
 }
 .posts dl{
     clear:both;
-    width:750px;
+    width:100%;
     display:block;
     min-height:100px;*+height:100%;_height:100px;
     border:1px solid #eee;
