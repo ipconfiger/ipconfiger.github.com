@@ -105,6 +105,11 @@ a img { border: none; }
     font:1em #aaa;
     display:block;
 }
+.post dd{
+    width:100%;
+    font:1em #eee;
+    display:block;
+}
 
 .footer{
     padding:10px;
