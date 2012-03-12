@@ -47,29 +47,10 @@ a img { border: none; }
 .ml160{margin-left:160px}
 .ml180{margin-left:180px}
 .ml200{margin-left:200px}
-.ml220{margin-left:220px}
-.ml240{margin-left:240px}
-.ml260{margin-left:260px}
-.ml280{margin-left:280px}
-.ml300{margin-left:300px}
-
-.h20{height:20px}
-.h40{height:40px}
-.h60{height:60px}
-.h80{height:80px}
-.h100{height:100px}
-.h120{height:120px}
-.h140{height:140px}
-.h160{height:160px}
 
 .main {  margin:0 auto;  width:970px; padding-top:10px; }
 
-.clear {clear:both;
-    font-size: 0;
-    height: 0;
-    overflow: hidden;
-}
-
+.clear {clear:both;}
 .clearfix, .main{ display:block;} 
 
 .clearfix:after, .main:after {
@@ -82,7 +63,6 @@ a img { border: none; }
      }
 
 .fl {float:left}
-.fr {float:right}
 
 .header {
     height:120px;
@@ -102,61 +82,34 @@ a img { border: none; }
     color:red;
 }
 
-.content{
-    width:970px;
-    margin-left:auto;
-    margin-right:auto;
-    min-height:350px;*+height:100%;_height:350px;
-}
+.content{}
 
 .side{
     width:200px;
-    min-height:300px;*+height:100%;_height:300px;
-    /*background:#FAD;*/
-}
-.posts{
-    width:738px;
     min-height:400px;*+height:100%;_height:400px;
-    /*background:#DAF;*/
-}
-.wrapper{
-    position:absolute;
-    clear:both;
     padding:10px;
 }
-
-.timestamp{
-    color:#ADADAD;
-    font-size:0.6em;
+.posts{
+    min-height:400px;*+height:100%;_height:400px;
+    padding:10px;
 }
-
-dl{
-    width:710px;
-    clear:both;
-    margin-bottom:5px;
-    float:left;
-    border:1px solid #EFEFEF;
+.posts dl{
+    width:100%;
+    min-height:100px;*+height:100%;_height:100px;
+    display:block;
+    border:1px solid #eee;
+    padding:5px;
 }
-dt{
-    padding:5px 20px;border-bottom:1px solid #efefef;
-    font-size:1.2em;
-    color:#555555;
+.posts dl .title{
+    width:100%;
+    font:1em #aaa;
 }
-dd{ padding:5px 20px;}
+.posts dl dd{
+    width:100%;
+    font:1em #eee;
+}
 
 .footer{
     padding:10px;
-    color:#5F5F5F;
-    font-size:0.8em;
-}
-.commend{
-    color:#aeaeae;
-    font-size:1.1em;
-    padding:5px;
-}
-.disp{
-    width:180px;
-    min-height:100px;*+height:100%;_height:100px;
-    padding:5px;
 }
 
