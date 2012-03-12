@@ -142,6 +142,11 @@ a:hover,a:active{
     border:1px solid #A1A1A1;
 }
 
+#post-text{
+    width:678px;
+    padding:20px;
+}
+
 dl{
     width:710px;
     clear:both;

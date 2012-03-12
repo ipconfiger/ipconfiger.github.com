@@ -22,7 +22,7 @@
                         function(data){
                             var converter = new Showdown.converter();
                             var html = converter.makeHtml(data);
-                            $("#post-content").html(html);
+                            $("#post-text").html(html);
                             $("#post-content").show();
                             $("#loading").hide();
                         }
@@ -30,13 +30,11 @@
             }
             function show_index(){
                 $("#loading").show();
-                $("#post-content").html("");
+                $("#post-text").html("");
                 $("#post-content").hide();
                 $.getJSON(
                         "/list.json",
                         function(data){
-                            $("#post-content").html("");
-                            $("#post-content").hide();
                             $("#loading").hide();
                             $("#list_container").show();
                             render_list(data);
@@ -62,10 +60,12 @@
                 <div class="fl mt40 disp">我还没想好介绍怎么写，所以这里存在的文字都是子虚乌有的</div>
             </div>
             <div id="posts" class="posts ml200">
+                <div id="loading" class="loading" style="display:none;"> <img src="images/loading.gif"/> </div>
                 <div class="wrapper" id="list_container">
                 </div>
-                <div id="post-content" class="text"></div>
-                <div id="loading" class="loading" style="display:none;"> <img src="images/loading.gif"/> </div>
+                <div id="post-content" class="text">
+                    <div id="post-text"></div>
+                </div>
             </div>
         </div>
         <div class="main footer">版权申明</div>
