@@ -15,7 +15,7 @@
             }
             function show_post(name){
                 $("#list_container").html("");
-                $("#list_container").show();
+                $("#list_container").hide();
                 $("#loading").show();
                 $.get(
                         "/blogs/"+name,
@@ -24,6 +24,7 @@
                             var html = converter.makeHtml(data);
                             $("#post-content").html(html);
                             $("#post-content").show();
+                            $("#loading").hide();
                         }
                 );
             }
@@ -34,6 +35,8 @@
                 $.getJSON(
                         "/list.json",
                         function(data){
+                            $("#post-content").html("");
+                            $("#post-content").hide();
                             $("#loading").hide();
                             $("#list_container").show();
                             render_list(data);
@@ -61,7 +64,7 @@
             <div id="posts" class="posts ml200">
                 <div class="wrapper" id="list_container">
                 </div>
-                <div id="post-content"></div>
+                <div id="post-content" class="text"></div>
                 <div id="loading" class="loading" style="display:none;"> <img src="images/loading.gif"/> </div>
             </div>
         </div>

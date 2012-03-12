@@ -135,6 +135,13 @@ a:hover,a:active{
     margin-right:auto;
 }
 
+.text{
+    width:718px;
+    min-height:400px;*+height:100%;_height:400px;
+    padding:10px;
+    border:1px solid #A1A1A1;
+}
+
 dl{
     width:710px;
     clear:both;
