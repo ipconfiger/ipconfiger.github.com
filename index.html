@@ -14,7 +14,7 @@
                 $("#list_container").html(html);
             }
             function show_post(name){
-                $.load(
+                $.get(
                         "/blogs/"+name,
                         function(data){
                             alert(data);

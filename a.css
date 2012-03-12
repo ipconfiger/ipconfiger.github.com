@@ -90,11 +90,11 @@ a img { border: none; }
     margin-left:auto;
     margin-right:auto;
 }
-
-a{
+.header a{
     font:2em bold;
     text-decoration:none;
 }
+
 a:link,a:visited{
     color:#555555;
 }
