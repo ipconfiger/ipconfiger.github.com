@@ -1,14 +1,14 @@
-{data:[
+{"data":[
  {
-     name:"last.md",
-     title:"倒数第一条POST",
-     disp:"就是测试的内容",
-     date:"2012年3月12日下午2点"
+     "name":"last.md",
+     "title":"倒数第一条POST",
+     "disp":"就是测试的内容",
+     "date":"2012年3月12日下午2点"
  },
  {
-     name:"last2.md",
-     title="倒数第二跳POST啊",
-     disp:"最早的测试的内容",
-     date:"2012年3月11日凌晨"
+     "name":"last2.md",
+     "title":"倒数第二跳POST啊",
+     "disp":"最早的测试的内容",
+     "date":"2012年3月11日凌晨"
  }
 ]}
