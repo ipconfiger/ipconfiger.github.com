@@ -130,6 +130,11 @@ a:hover,a:active{
     font-size:0.6em;
 }
 
+.loading{
+    margin-left:auto;
+    margin-right:auto;
+}
+
 dl{
     width:710px;
     clear:both;

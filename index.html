@@ -14,20 +14,29 @@
                 $("#list_container").html(html);
             }
             function show_post(name){
+                $("#post_list_template").html("");
+                $("#post_list_template").show();
+                $(".loading").show();
                 $.get(
                         "/blogs/"+name,
                         function(data){
                             alert(data);
                             var converter = new Showdown.converter();
                             var html = converter.makeHtml(data);
-                            alert(html)
+                            $("#post-content").html(html);
+                            $("#post-content").show();
                         }
                 );
             }
             function show_index(){
+                $(".loading").show();
+                $("#post-content").html("");
+                $("#post-content").hide();
                 $.getJSON(
                         "/list.json",
                         function(data){
+                            $(".loading").hide();
+                            $("#post_list_template").show();
                             render_list(data);
                         }
                     );
@@ -53,6 +62,8 @@
             <div id="posts" class="posts ml200">
                 <div class="wrapper" id="list_container">
                 </div>
+                <div id="post-content"></div>
+                <div class="loading" style="display:none;"> <img src="images/loading.gif"/> </div>
             </div>
         </div>
         <div class="main footer">版权申明</div>
