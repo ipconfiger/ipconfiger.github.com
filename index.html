@@ -15,6 +15,10 @@
                 html=template(datas);
                 $("#list_container").html(html);
             }
+            function goto(name){
+                window.location.hash="#!"+name;
+                window.location.reload();
+            }
             function show_post(name){
                 window.location.hash="#!"+name;
                 $("#list_container").html("");
@@ -28,13 +32,6 @@
                             $("#post-text").html(html);
                             $("#post-content").show();
                             $("#loading").hide();
-                            DISQUS.reset({
-                                reload: true,
-                                config: function () {
-                                    this.page.identifier = "td:"+name;
-                                    this.page.url = "http://ipconfig.github.com/#!"+name;
-                                }
-                            });
                         }
                 );
             }
@@ -101,7 +98,7 @@
         <%_.each(data,function(post){%>
         <dl>
            <dt class="h20">
-           <span class="fl"> <a href="javascript:void(0);" onclick="show_post('<%=post.name%>');"><%=post.title%></a></span><span class="fr timestamp mt10"> &gt;发布时间&nbsp;<%=post.date%></span>
+           <span class="fl"> <a href="javascript:void(0);" onclick="goto('<%=post.name%>');"><%=post.title%></a></span><span class="fr timestamp mt10"> &gt;发布时间&nbsp;<%=post.date%></span>
                <span class="slear"></span>
            </dt>
            <dd><%=post.disp%></dd>
