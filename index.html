@@ -3,6 +3,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <link href="a.css" type="text/css" rel="stylesheet" charset="utf-8" />
+        <link href="styles/dark.css" type="text/css" rel="stylesheet" charset="utf-8" />
         <title>压力很大的BLOG</title>
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
         <script type="text/javascript" src="/underscore-min.js"></script>
@@ -27,6 +28,13 @@
                             $("#post-text").html(html);
                             $("#post-content").show();
                             $("#loading").hide();
+                            DISQUS.reset({
+                                reload: true,
+                                config: function () {
+                                    this.page.identifier = "td:"+name;
+                                    this.page.url = "http://ipconfig.github.com/#!"+name;
+                                }
+                            });
                         }
                 );
             }
