@@ -20,7 +20,6 @@
                 $.get(
                         "/blogs/"+name,
                         function(data){
-                            alert(data);
                             var converter = new Showdown.converter();
                             var html = converter.makeHtml(data);
                             $("#post-content").html(html);
