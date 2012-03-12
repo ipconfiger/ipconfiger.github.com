@@ -32,6 +32,8 @@
                             $("#post-text").html(html);
                             $("#post-content").show();
                             $("#loading").hide();
+                            hljs.tabReplace = '    ';
+                            hljs.initHighlighting();
                         }
                 );
             }
@@ -53,9 +55,7 @@
                  if(params.length>0){
                      name=params.split('!')[1]
                      show_post(name);
-                     hljs.tabReplace = '    ';
-                     hljs.initHighlighting();
-                 }else{
+                     }else{
                      show_index();
                  }
              }
