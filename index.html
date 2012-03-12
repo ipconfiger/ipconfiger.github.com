@@ -22,10 +22,10 @@
             }
             $(function(){
                  var params=window.location.hash;
-                 if(_.isNull(params)||_.isNaN(params)){
+                 if(params.length<1)){
                      show_index();
                  }else{
-                     alert("show post "+params.length);
+                     alert("show post "+params);
                  }
              }
             );
