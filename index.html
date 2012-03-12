@@ -15,9 +15,9 @@
                 html=template(datas);
                 $("#list_container").html(html);
             }
-            function goto(name){
+            function goto_url(name){
                 window.location.hash="#!"+name;
-                window.location.reload();
+                window.location.reload(true);
             }
             function show_post(name){
                 window.location.hash="#!"+name;
@@ -98,7 +98,7 @@
         <%_.each(data,function(post){%>
         <dl>
            <dt class="h20">
-           <span class="fl"> <a href="javascript:void(0);" onclick="goto('<%=post.name%>');"><%=post.title%></a></span><span class="fr timestamp mt10"> &gt;发布时间&nbsp;<%=post.date%></span>
+           <span class="fl"> <a href="javascript:void(0);" onclick="goto_url('<%=post.name%>');"><%=post.title%></a></span><span class="fr timestamp mt10"> &gt;发布时间&nbsp;<%=post.date%></span>
                <span class="slear"></span>
            </dt>
            <dd><%=post.disp%></dd>
