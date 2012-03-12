@@ -5,12 +5,21 @@
         <link href="a.css" type="text/css" rel="stylesheet" charset="utf-8" />
         <title>压力很大的BLOG</title>
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
-        <script type="text/javascript" src="underscore-min.js"></script>
+        <script type="text/javascript" src="/underscore-min.js"></script>
+        <script type="text/javascript" src="/showdown.js"></script>
         <script type="text/javascript">
             function render_list(datas){
                 var template = _.template($("#post_list_template").html());
                 html=template(datas);
                 $("#list_container").html(html);
+            }
+            function show_post(name){
+                $.load(
+                        "/blogs/"+name,
+                        function(data){
+                            alert(data);
+                        }
+                );
             }
             function show_index(){
                 $.getJSON(
@@ -23,7 +32,7 @@
             $(function(){
                  var params=window.location.hash;
                  if(params.length>0){
-                     alert("show post "+params);
+                     alert(params);
                  }else{
                      show_index();
                  }
@@ -49,11 +58,11 @@
         <%_.each(data,function(post){%>
         <dl>
            <dt class="h20">
-           <span class="fl"><%=post.title%></span><span class="fr timestamp mt10"> &gt;发布时间&nbsp;<%=post.date%></span>
+           <span class="fl"> <a href="javascript:void(0);" onclick="show_post('<%=post.name%>');"><%=post.title%></a></span><span class="fr timestamp mt10"> &gt;发布时间&nbsp;<%=post.date%></span>
                <span class="slear"></span>
            </dt>
            <dd><%=post.disp%></dd>
-           <dd> <div class="fr commend">☆ N个评论(展开评论)</div></dd>
+           <dd> <div class="fr commend">☆ N个评论(<a href="javascript:void(0);">展开评论</a>)</div></dd>
        </dl>
        <%});%>
     </script>

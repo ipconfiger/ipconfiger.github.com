@@ -91,14 +91,14 @@ a img { border: none; }
     margin-right:auto;
 }
 
-.header a{
+a{
     font:2em bold;
     text-decoration:none;
 }
-.header a:link,a:visited{
+a:link,a:visited{
     color:#555555;
 }
-.header a:hover,a:active{
+a:hover,a:active{
     color:red;
 }
 
