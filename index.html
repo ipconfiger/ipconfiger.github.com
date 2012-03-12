@@ -14,10 +14,13 @@
             }
             var params=window.location.hash;
             $(function(){
-                    $.getJSON("/list.json",function(data){
+                    $.getJSON(
+                        "/list.json",
+                        function(data){
                             alert(data);
-                            render_list(data);
-                    });
+                            //render_list(data);
+                        }
+                    );
               }
              );
         </script>
