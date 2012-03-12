@@ -93,6 +93,18 @@
             </div>
         </div>
         <div class="main footer">版权申明</div>
+        <script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'alexandersblognew'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
     </body>
     <script id="post_list_template" type="text/template">
         <%_.each(data,function(post){%>
@@ -102,7 +114,7 @@
                <span class="slear"></span>
            </dt>
            <dd><%=post.disp%></dd>
-           <dd> <div class="fr commend">☆ N个评论(<a href="javascript:void(0);">展开评论</a>)</div></dd>
+           <dd> <div class="fr commend">☆   评论(<a href="/#disqus_thread"></a>)</div></dd>
        </dl>
        <%});%>
     </script>
