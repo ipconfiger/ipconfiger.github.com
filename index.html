@@ -13,15 +13,22 @@
                 $("#list_container").html(html);
             }
             var params=window.location.hash;
-            $(function(){
-                    $.getJSON(
+            function show_index(){
+                $.getJSON(
                         "/list.json",
                         function(data){
                             render_list(data);
                         }
                     );
-              }
-             );
+            }
+            $(function(){
+                 if(params==null){
+                     show_index();
+                 }else{
+                     alert("show post "+params);
+                 }
+             }
+            );
         </script>
     </head>
     <body>
