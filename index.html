@@ -12,7 +12,6 @@
                 html=template(datas);
                 $("#list_container").html(html);
             }
-            var params=window.location.hash;
             function show_index(){
                 $.getJSON(
                         "/list.json",
@@ -22,7 +21,8 @@
                     );
             }
             $(function(){
-                 if(params==null){
+                 var params=window.location.hash;
+                 if(_.isNull(params)){
                      show_index();
                  }else{
                      alert("show post "+params);
