@@ -22,7 +22,7 @@
             }
             $(function(){
                  var params=window.location.hash;
-                 if(_.isNull(params)){
+                 if(_.isNull(params)||_.isNaN(params)){
                      show_index();
                  }else{
                      alert("show post "+params);
