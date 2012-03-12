@@ -7,6 +7,7 @@
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
         <script type="text/javascript" src="/underscore-min.js"></script>
         <script type="text/javascript" src="/showdown.js"></script>
+        <script src="/highlight.pack.js"></script>
         <script type="text/javascript">
             function render_list(datas){
                 var template = _.template($("#post_list_template").html());
@@ -47,6 +48,8 @@
                  if(params.length>0){
                      name=params.split('!')[1]
                      show_post(name);
+                     hljs.tabReplace = '    ';
+                     hljs.initHighlighting();
                  }else{
                      show_index();
                  }
