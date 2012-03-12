@@ -22,10 +22,10 @@
             }
             $(function(){
                  var params=window.location.hash;
-                 if(params.length<1)){
-                     show_index();
-                 }else{
+                 if(params.length>0)){
                      alert("show post "+params);
+                 }else{
+                     show_index();
                  }
              }
             );
