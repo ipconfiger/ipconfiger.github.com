@@ -61,10 +61,10 @@
 
             $(function(){
                  var params=getParameter("p");
-                 if(_.isNull(params)&&params.length>0){
-                     show_post(params);
-                 }else{
+                 if(_.isNull(params)){
                      show_index();
+                 }else{
+                     show_post(params);
                  }
              }
             );
