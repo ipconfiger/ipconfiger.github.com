@@ -1,0 +1,129 @@
+如何在GitHub上实现一个纯JS的博客系统
+=============================
+
+* * *
+
+github有个很好玩的功能我居然最近才发现。因为很久没写东西，突然想写点什么，但是每次打开[博客园]写东西都会感到不是那么的自在，最近几年都在研究linux向的开源向的技术，放[博客园]大多数是搞.NET技术的童鞋，对这些兴趣寥寥，没几个能讨论得来的，干脆就懒得写了。不过最近终于痛下决心要写点什么。所以找了一圈发现有人在github上写博客，所以就查了一下，原来是用了pages这个服务。从理论上来说，pages是一个用git版本库来发布静态页面的服务。可以把你创建的版本库里的静态文件用静态网站的形式发布出去。但是静态网站如何实现blog呢。原来有类似[jekyll]这样子的本地站点系统。这类东西的原理大致是在本地起一个动态网站，然后把内容一次性生成静态文件，这样把静态文件PULL到github的master上就能够发布出去了，有了新的POST就重新生成，发布一次。因为个人写blog撑死了一天写几篇，所以应对这种单人发布，读多写少的环境，还是适用的。但是我还是觉得臃肿了，既然发布静态文件能HOLD住，那么我人工放数据文件上去呢？省掉了发布的过程，岂不是更加简单。所以得到如下解决方案：
+1. 用JS加载json文件做首页的list。
+2. 将每个post用markdown格式存成文本文件，由ajax动态获取。
+3. 用showdown.js将获取到的文本内容格式化成html直接加载到页面上
+4. 列表、内容显示共用一个页面
+5. 由于没有本地可写存储，所以评论用Disqus的评论系统。
+6. 为了简化dom操作，引入underscore.js，这个库一是可以为js提供增强的功能，二是可以直接利用其模板系统
+7. 作为一个码农的博客肯定有很多代码内容，所以代码高亮需要引入hightlight.js
+
+step 1 先搞一个页面模板干起来
+---------------------------------
+
+这一步不算难，不过却花了最多的时间，作为一个色彩敏感度不高的人来说，选颜色很麻烦，最后只敢用了黑白，css什么的东调调西调调的，不知不觉就花了一个半晚上才弄成现在这样子。
+布局神马的暂且抛开不表，这么个单页上grid什么的css框架更是笨重了。主要还是说说POST的列表，因为这个得根据json文件来动态生成，所以用了underscore的template。这个在[咕咚网]改版的时候就用过，相当巴适。
+下面是index.html 列表部分的代码：
+
+    <div id="posts" class="posts ml200">
+        <div id="loading" class="loading" style="display:none;"> <img src="images/loading.gif"/> </div>
+        <div class="wrapper" id="list_container"></div>
+
+id为list_container的div就是我们打算用来放POST列表的地方。然后把列表内容放到一个script标签里：
+
+    <script id="post_list_template" type="text/template">
+        <%_.each(data,function(post){%>
+        <dl>
+           <dt class="h20">
+           <span class="fl"> <a href="index.html?p=<%=post.name%>"><%=post.title%></a></span><span class="fr timestamp mt10"> &gt;发布时间&nbsp;<%=post.date%></span>
+               <span class="slear"></span>
+           </dt>
+           <dd><%=post.disp%></dd>
+           <dd> <div class="fr commend">☆   评论(<a href="index.html?p=<%=post.name%>#disqus_thread"></a>)</div></dd>
+       </dl>
+       <%});%>
+    </script>
+
+然后在page的load事件里render一下：
+
+    function render_list(datas){
+        var template = _.template($("#post_list_template").html());
+        html=template(datas);
+        $("#list_container").html(html);
+    }
+    function show_index(){
+        $.getJSON(
+                "list.json",
+                function(data){
+                    render_list(data);
+                }
+            );
+    }
+
+详细的使用细则看一下underscore的文档了 [传送门 to 文档]
+
+step 2 加载markdown数据并渲染出来
+--------------------------------------
+
+这个步骤其实特别简单了，看代码：
+
+在加载了showdown.js 
+
+    <script type="text/javascript" src="showdown.js"></script>``
+
+然后：
+
+    function show_post(name){
+        $.get(
+                "blogs/"+name,
+                function(data){
+                    var converter = new Showdown.converter();
+                    var html = converter.makeHtml(data);
+                    $("#post-text").html(html);
+                }
+        );
+    }
+
+要渲染<code>块就需要加载hightlight.js，这个可以在 [下载hightlight.js] 这里下载，下载解压后将languages和styles目录
+以及hightlight.js和hightlight.pack.js拷贝到index所在目录下，引入：
+
+    <link href="styles/dark.css" type="text/css" rel="stylesheet" charset="utf-8" />
+    <script src="highlight.pack.js"></script>
+
+
+然后在show_post函数里添加点内容：
+
+    function show_post(name){
+        $.get(
+                "blogs/"+name,
+                function(data){
+                    var converter = new Showdown.converter();
+                    var html = converter.makeHtml(data);
+                    $("#post-text").html(html);
+                    hljs.tabReplace = '    ';  //设定高亮缩进宽度
+                    hljs.initHighlighting();  //初始化高亮显示
+                }
+        );
+    }
+
+这样根据markdown个是引入的代码就高亮了，正如你在本文看到的效果一样。
+
+step 3 发布网站
+-------------------
+
+
+到这里你还没去github申请一个账号就太说不过去了，首先你得有个账号，然后登陆，然后创建一个代码库，
+名字叫 你的账号名.github.com。比如我的github账号是 ipconfiger，
+那么版本库名就是ipconfig.github.com 然后你应该能猜到了，你发布出去的文件在和版本库同名的地址就能访问了。
+PS：github并不是PULL上去就立马能看到结果的，你最好在注册邮箱等邮件通知，每次发布成功都会给你发邮件的。
+至于如何add 如何commit 如何pull，那就自己看github的文档吧。
+
+
+
+下一步的目标
+----------------
+
+应该是加入LaTex什么等公式的解析吧。初看了一些js的实现，估计在下周左右实现
+
+PS，用markdown写东西真的很快.
+
+
+[博客园]: http://www.cnblogs.com/alexander-lee/
+[咕咚网]: http://www.codoon.com/
+[传送门 to 文档]: http://documentcloud.github.com/underscore/
+[下载hightlight.js]: http://softwaremaniacs.org/soft/highlight/en/
+
