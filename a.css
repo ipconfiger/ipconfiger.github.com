@@ -184,7 +184,7 @@ p img.right10 { float: right; margin:0.833em;  }
     margin-right:auto;
 }
 .header a{
-    font:2em bold;
+    font:2.5em bold;
     text-decoration:none;
 }
 
@@ -257,7 +257,8 @@ dd{ padding:5px 20px;}
 .footer{
     padding:10px;
     color:#5F5F5F;
-    font-size:0.8em;
+    font-size:0.9em;
+    text-align:center;
 }
 .commend{
     color:#aeaeae;
