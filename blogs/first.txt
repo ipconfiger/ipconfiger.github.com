@@ -3,7 +3,7 @@
  - 来吧，来测试一下
  - 嘿嘿，可以测试测试
 
-下面是一段代码
+下面是一段代码:
 
     def func(argv):
         print "just a test"
