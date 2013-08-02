@@ -48,6 +48,21 @@ body {
   width: 725px;
   margin: auto; }
 
+#content .main{
+    text-align: left;
+    float: left;
+    width: 650px;
+}
+
+#content .side{
+    font-size: 13px;
+    float: right;
+    width: 150px;
+    text-align: left;
+    border-left: 5px solid #eee;
+    padding: 15px 0 15px 15px;
+}
+
 .post {
   margin-bottom: 55px; }
   .post h3 {
@@ -158,3 +173,4 @@ table.projects td.desc {
   margin-top: 45px; }
   #disqus_thread h3 {
     font-size: 19px; }
+
