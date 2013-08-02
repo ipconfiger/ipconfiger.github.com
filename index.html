@@ -5,10 +5,10 @@ title: 压力很大同志的BLOG
 
 {% for post in site.posts limit:3 %}
     <div class="post">
-        <h2><a href="{{ post.url }}">{{ post.title|24 }}</a></h2>
+        <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
       
         <div class="body">
-            {{ post.content|200 }}
+            {{ post.content }}
         </div>
         
         <div class="meta">

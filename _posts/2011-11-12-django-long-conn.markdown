@@ -25,17 +25,7 @@ Django的数据库可以通过配置使用专门定制的Backend，我们就从�
 
 把站点跑起来看，结果如何？刷新几次后报错了。Why？看看日志可以看到如下的错误：
 
-Traceback (most recent call last):
-File "/home/www/.virtualenvs/django13/lib/python2.7/site-packages/gevent/wsgi.py", line 114, in handle
-result = self.server.application(env, self.start_response)
-File "/home/www/.virtualenvs/django13/lib/python2.7/site-packages/django/core/handlers/wsgi.py", line 275, in __call__
-signals.request_finished.send(sender=self.__class__)
-File "/home/www/.virtualenvs/django13/lib/python2.7/site-packages/django/dispatch/dispatcher.py", line 172, in send
-response = receiver(signal=self, sender=sender, **named)
-File "/home/www/.virtualenvs/django13/lib/python2.7/site-packages/django/db/__init__.py", line 85, in close_connection
-conn.close()
-File "/home/www/.virtualenvs/django13/lib/python2.7/site-packages/django/db/backends/__init__.py", line 244, in close
-self.connection.close()
+<script src="https://gist.github.com/ipconfiger/6142422.js"></script>
 
 看来我们光是包装了MySQLdb本身还不行，在connect后Django获取了Connection的对象，之后就能为所欲为，他用完后很自觉的关掉了，因为他直觉的以为每次connect都拿到了新的Connection对象。所以我们必须把Connection对象也包装了了。所以升级后的解决方案代码如下：
 
