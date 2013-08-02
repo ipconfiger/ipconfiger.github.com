@@ -43,10 +43,12 @@ body {
     #header h2 img {
       margin-left: 3px; }
 
+
 #content{
     width: 865px;
     margin: auto;
 }
+
 
 #content .inner {
   text-align: left;
