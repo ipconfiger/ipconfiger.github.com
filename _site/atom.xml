@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+ 
+ <title>BLOG_NAME</title>
+ <link href="YOUR_URL/atom.xml" rel="self"/>
+ <link href="YOUR_URL"/>
+ <updated>2013-08-03T00:57:46+08:00</updated>
+ <id>BLOG_URL</id>
+ <author>
+   <name>BLOG_NAME</name>
+ </author>
+
+ 
+ <entry>
+   <title>翻译处女作欢迎批评指正－tornado的模板系统文档</title>
+   <link href="YOUR_URL/2012/06/12/translate-tornado-template-document/"/>
+   <updated>2012-06-12T00:00:00+08:00</updated>
+   <id>BLOG_URL/2012/06/12/translate-tornado-template-document</id>
+   <content type="html">&lt;hr /&gt;
+
+&lt;p&gt;tornado的文档非常的匮乏，不过这是表面现象，其实个中乾坤都在源文件里，源文件的注释里有非常的文档资料，值得仔细研究。今日将模板系统的内容翻译之，以供日后使用。此处意译为主，并未逐字翻译
+A simple template system that compiles templates to Python code.
+一个简单的模板系统，将模板编译成python代码&lt;/p&gt;
+
+&lt;h2&gt;Basic usage looks like(基本的用法如下)：&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code&gt;t = template.Template(&quot;&amp;lt;html&amp;gt;\{\{ myvalue \}\}&amp;lt;/html&amp;gt;&quot;)
+print t.generate(myvalue=&quot;XXX&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Loader is a class that loads templates from a root directory and caches
+the compiled templates::
+加载器是一个从根目录加载模板文件并编译缓存模板的类&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;loader = template.Loader(&quot;/home/btaylor&quot;)
+print loader.load(&quot;test.html&quot;).generate(myvalue=&quot;XXX&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We compile all templates to raw Python. Error-reporting is currently... uh,
+interesting. Syntax for the templates::
+我们编译所有模板为python代码，（目前会报错。。。。注：可能是开发时候写下来的）&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;### base.html
+&amp;lt;html&amp;gt;
+  &amp;lt;head&amp;gt;
+    &amp;lt;title&amp;gt;\{\% block title \%\}Default title\{\% end \%\}&amp;lt;/title&amp;gt;
+  &amp;lt;/head&amp;gt;
+  &amp;lt;body&amp;gt;
+    &amp;lt;ul&amp;gt;
+      \{\% for student in students \%\}
+        \{\% block student \%\}
+          &amp;lt;li&amp;gt;\{\{ escape(student.name) \}\}&amp;lt;/li&amp;gt;
+        \{\% end \%\}
+      \{\% end \%\}
+    &amp;lt;/ul&amp;gt;
+  &amp;lt;/body&amp;gt;
+&amp;lt;/html&amp;gt;
+### bold.html
+\{\% extends &quot;base.html&quot; \%\}
+\{\% block title \%\}A bolder title\{\% end \%\}
+\{\% block student \%\}
+  &amp;lt;li&amp;gt;&amp;lt;span style=&quot;bold&quot;&amp;gt;\{\{ escape(student.name) \}\}&amp;lt;/span&amp;gt;&amp;lt;/li&amp;gt;
+\{\% end \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Unlike most other template systems, we do not put any restrictions on the
+expressions you can include in your statements. if and for blocks get
+translated exactly into Python, you can do complex expressions like::
+与其他模板系统不同的是，我们没有对你在模板声名中植入的表达式做任何限制。if和for 块完全支持Python的语法，你可以使用完整的写法，如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% for student in [p for p in people if p.student and p.age &amp;gt; 23] \%\}
+    &amp;lt;li&amp;gt;\{\{ escape(student.name) \}\}&amp;lt;/li&amp;gt;
+\{\% end \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Translating directly to Python means you can apply functions to expressions
+easily, like the escape() function in the examples above. You can pass
+functions in to your template just like any other variable::
+直接转义成python代码意味着你可以轻松的在表达式里调用方法，譬如上面调用escape函数的例子，你也可以将函数当成任何其他变量一样的传递到模板中&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;### Python code
+def add(x, y):
+   return x + y
+template.execute(add=add)
+### The template
+\{\{ add(1, 2) \}\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We provide the functions escape(), url_escape(), json_encode(), and squeeze()
+to all templates by default.
+每个模板默认提供了 escape(), url_escape(), json_encode(), and squeeze() 这几个函数
+Typical applications do not create 'Template' or 'Loader' instances by
+hand, but instead use the 'render' and 'render_string' methods of
+'tornado.web.RequestHandler', which load templates automatically based
+on the 'template_path','Application' setting.
+默认的application不会手动创建Template和Loader的实例，而是通过调用'tornado.web.RequestHandler'实例中的 render，render_string 方法。
+这些方法通过Application的setting里面的'template_path'这一项的设置自动加载目录里的模板&lt;/p&gt;
+
+&lt;h2&gt;Syntax Reference(语法)&lt;/h2&gt;
+
+&lt;p&gt;Template expressions are surrounded by double curly braces: &lt;code&gt;\{\{ ... \}\}&lt;/code&gt;.
+The contents may be any python expression, which will be escaped according
+to the current autoescape setting and inserted into the output.  Other
+template directives use &lt;code&gt;\{\% \%\}&lt;/code&gt;.  These tags may be escaped as &lt;code&gt;\{\{!&lt;/code&gt;
+and &lt;code&gt;\{\%!&lt;/code&gt; if you need to include a literal &lt;code&gt;\{\{&lt;/code&gt; or &lt;code&gt;\{\%&lt;/code&gt; in the output.&lt;/p&gt;
+
+&lt;p&gt;模板表达式用两个大括号包裹起来：&lt;code&gt;\{\{ … \}\}&lt;/code&gt;.
+内容可以是任何Python表达式，表达式会使用当前的 autoescape设置转义并插入到输出中。
+其他模板指令使用 &lt;code&gt;\{\%    \%\}&lt;/code&gt;。这些标签会被转义成 &lt;code&gt;\{\{!&lt;/code&gt;和 &lt;code&gt;\{\%!&lt;/code&gt; ，如果你需要插入 &lt;code&gt;\{\{&lt;/code&gt;或者 &lt;code&gt;\{\%&lt;/code&gt;到输出中。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% apply *function* \%\}...\{\% end \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt; Applies a function to the output of all template code between &lt;code&gt;apply&lt;/code&gt;
+ and &lt;code&gt;end&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;将这个标签之间的模板输出作为一个参数应用到一个方法，如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% apply linkify \%\}\{\{name\}\} said: \{\{message\}\}\{\% end \%\}
+
+\{\% autoescape *function* \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Sets the autoescape mode for the current file.  This does not affect
+other files, even those referenced by &lt;code&gt;\{\% include \%\}&lt;/code&gt;.  Note that
+autoescaping can also be configured globally, at the &lt;code&gt;Application&lt;/code&gt;
+or &lt;code&gt;Loader&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;这个标签用来设置当前文件的自动转义模式。这项设置对其他文件无效，即时是哪些插入了当前文件的模板。
+自动转义也能够在Application和Loader中全局设置。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% autoescape xhtml_escape \%\}
+\{\% autoescape None \%\}
+
+
+\{\% block *name* \%\}...\{\% end \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Indicates a named, replaceable block for use with &lt;code&gt;\{\% extends \%\}&lt;/code&gt;.
+Blocks in the parent template will be replaced with the contents of
+the same-named block in a child template.::
+表示一个命名的可以被替换的块， 和&lt;code&gt;\{\% extends \%\}&lt;/code&gt;一起使用。在父模板中的这些块将被自模板中同名的块替代&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;!-- base.html --&amp;gt;
+&amp;lt;title&amp;gt;\{\% block title \%\}Default title\{\% end \%\}&amp;lt;/title&amp;gt;
+&amp;lt;!-- mypage.html --&amp;gt;
+\{\% extends &quot;base.html&quot; \%\}
+\{\% block title \%\}My page title\{\% end \%\}
+
+
+\{\% comment ... \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;A comment which will be removed from the template output.  Note that
+there is no &lt;code&gt;\{\% end \%\}&lt;/code&gt; tag; the comment goes from the word &lt;code&gt;comment&lt;/code&gt;
+to the closing &lt;code&gt;\%\}&lt;/code&gt; tag.
+注释块，不会输出。注意不需要 &lt;code&gt;\{\% end \%\}&lt;/code&gt; 标签；&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% extends *filename* \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Inherit from another template.  Templates that use &lt;code&gt;extends&lt;/code&gt; should
+contain one or more &lt;code&gt;block&lt;/code&gt; tags to replace content from the parent
+template.  Anything in the child template not contained in a &lt;code&gt;block&lt;/code&gt;
+tag will be ignored.  For an example, see the &lt;code&gt;\{\% block \%\}&lt;/code&gt; tag.
+继承其他的模板。使用extends标签的模板需要包含一个到多个block标签用来替换父模板中的同名的块。子模板中任何不在块中的内容将被忽略掉。例子可参见 &lt;code&gt;\{\% block \%\}&lt;/code&gt;标签那一节&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% for *var* in *expr* \%\}...\{\% end \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Same as the python &lt;code&gt;for&lt;/code&gt; statement.
+for循环标签，等同于Python中的for表达式&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% from *x* import *y* \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Same as the python &lt;code&gt;import&lt;/code&gt; statement.
+import标签，等同于import表达式&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% if *condition* \%\}...\{\% elif *condition* \%\}...\{\% else \%\}...\{\% end \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Conditional statement - outputs the first section whose condition is
+true.  (The &lt;code&gt;elif&lt;/code&gt; and &lt;code&gt;else&lt;/code&gt; sections are optional)
+if条件表达式标签，等同于python的if … else … 表达式&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% import *module* \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Same as the python &lt;code&gt;import&lt;/code&gt; statement.
+import 标签的另一种写法&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% include *filename* \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Includes another template file.  The included file can see all the local
+variables as if it were copied directly to the point of the &lt;code&gt;include&lt;/code&gt;
+directive (the &lt;code&gt;\{\% autoescape \%\}&lt;/code&gt; directive is an exception).
+Alternately, &lt;code&gt;\{\% module Template(filename, **kwargs) \%\}&lt;/code&gt; may be used
+to include another template with an isolated namespace.
+引用另外的模板文件。被引入的文件可以访问引入它的模板的所有locals变量，相当于是直接copy了被引入模板文件的内容。autoescape节有例子。
+另外&lt;code&gt;\{\% module Template(filename,**kwargs) \%\}&lt;/code&gt;可以用来引入一个模板文件在一个独立的namespace中&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% module *expr* \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Renders a &lt;code&gt;~tornado.web.UIModule&lt;/code&gt;.  The output of the &lt;code&gt;UIModule&lt;/code&gt; is
+not escaped::
+插入一个UI模块的标签，UI模块的输出没有经过转义的&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% module Template(&quot;foo.html&quot;, arg=42) \%\}
+
+\{\% raw *expr* \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Outputs the result of the given expression without autoescaping.
+不经过转义输出一个表达式的值&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% set *x* = *y* \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Sets a local variable.
+创建一个本地变量&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% try \%\}...\{\% except \%\}...\{\% finally \%\}...\{\% end \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Same as the python &lt;code&gt;try&lt;/code&gt; statement.
+和Python 的try … except …  块特性一致&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;\{\% while *condition* \%\}... \{\% end \%\}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Same as the python &lt;code&gt;while&lt;/code&gt; statement.
+和Python里while语句一致&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>A Test Post</title>
+   <link href="YOUR_URL/2008/12/14/a-test-post/"/>
+   <updated>2008-12-14T00:00:00+08:00</updated>
+   <id>BLOG_URL/2008/12/14/a-test-post</id>
+   <content type="html">&lt;p&gt;us imperdiet cursus mi congue. Cras ante augue, aliquam feugiat elementum quis, ullamcorper id lacus. Phasellus quis lectus nec elit pretium scelerisque. Aliquam leo felis, semper vel pellentesque id, tincidunt sed nisi. In lacus diam, faucibus ut euismod non, hendrerit quis sem. In quis massa vitae quam feugiat tempus. In eleifend tincidunt tellus a euismod. Aenean elementum, nisl sit amet fringilla lobortis, quam turpis consectetur urna, nec sollicitudin arcu justo vel magna.&lt;/p&gt;
+
+&lt;p&gt;Sed et lorem orci. Nullam consectetur elementum nibh, at aliquam metus adipiscing eget. Ut tincidunt fermentum urna, a eleifend dui volutpat eget. Integer varius nunc nec nulla tristique interdum. Suspendisse imperdiet libero sit amet lacus elementum nec dignissim dui accumsan. Curabitur at felis nunc, eu fermentum nisl. Curabitur quis ante non nisl hendrerit varius. Aliquam quis diam non massa gravida malesuada eu quis mi. Aenean tincidunt nunc vel sapien fermentum eu aliquam arcu tempor. Nulla risus&lt;/p&gt;
+</content>
+ </entry>
+ 
+ 
+</feed>

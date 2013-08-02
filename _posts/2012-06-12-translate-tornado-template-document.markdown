@@ -15,7 +15,7 @@ A simple template system that compiles templates to Python code.
 Basic usage looks like(基本的用法如下)：
 ------------------------------------
 
-    t = template.Template("<html>{{ myvalue }}</html>")
+    t = template.Template("<html>\{\{ myvalue \}\}</html>")
     print t.generate(myvalue="XXX")
 
 Loader is a class that loads templates from a root directory and caches
@@ -32,33 +32,33 @@ interesting. Syntax for the templates::
     ### base.html
     <html>
       <head>
-        <title>{\% block title \%}Default title{\% end \%}</title>
+        <title>\{\% block title \%\}Default title\{\% end \%\}</title>
       </head>
       <body>
         <ul>
-          {\% for student in students \%}
-            {\% block student \%}
-              <li>{{ escape(student.name) }}</li>
-            {\% end \%}
-          {\% end \%}
+          \{\% for student in students \%\}
+            \{\% block student \%\}
+              <li>\{\{ escape(student.name) \}\}</li>
+            \{\% end \%\}
+          \{\% end \%\}
         </ul>
       </body>
     </html>
     ### bold.html
-    {\% extends "base.html" \%}
-    {\% block title \%}A bolder title{\% end \%}
-    {\% block student \%}
-      <li><span style="bold">{{ escape(student.name) }}</span></li>
-    {\% end \%}
+    \{\% extends "base.html" \%\}
+    \{\% block title \%\}A bolder title\{\% end \%\}
+    \{\% block student \%\}
+      <li><span style="bold">\{\{ escape(student.name) \}\}</span></li>
+    \{\% end \%\}
 
 Unlike most other template systems, we do not put any restrictions on the
 expressions you can include in your statements. if and for blocks get
 translated exactly into Python, you can do complex expressions like::
 与其他模板系统不同的是，我们没有对你在模板声名中植入的表达式做任何限制。if和for 块完全支持Python的语法，你可以使用完整的写法，如下：
 
-    {\% for student in [p for p in people if p.student and p.age > 23] \%}
-        <li>{{ escape(student.name) }}</li>
-    {\% end \%}
+    \{\% for student in [p for p in people if p.student and p.age > 23] \%\}
+        <li>\{\{ escape(student.name) \}\}</li>
+    \{\% end \%\}
 
 Translating directly to Python means you can apply functions to expressions
 easily, like the escape() function in the examples above. You can pass
@@ -70,7 +70,7 @@ functions in to your template just like any other variable::
        return x + y
     template.execute(add=add)
     ### The template
-    {{ add(1, 2) }}
+    \{\{ add(1, 2) \}\}
 
 We provide the functions escape(), url_escape(), json_encode(), and squeeze()
 to all templates by default.
@@ -85,124 +85,124 @@ on the 'template_path','Application' setting.
 Syntax Reference(语法)
 ----------------
 
-Template expressions are surrounded by double curly braces: ``{{ ... }}``.
+Template expressions are surrounded by double curly braces: ``\{\{ ... \}\}``.
 The contents may be any python expression, which will be escaped according
 to the current autoescape setting and inserted into the output.  Other
-template directives use ``{\% \%}``.  These tags may be escaped as ``{{!``
-and ``{\%!`` if you need to include a literal ``{{`` or ``{\%`` in the output.
+template directives use ``\{\% \%\}``.  These tags may be escaped as ``\{\{!``
+and ``\{\%!`` if you need to include a literal ``\{\{`` or ``\{\%`` in the output.
 
-模板表达式用两个大括号包裹起来：``{{ … }}``.
+模板表达式用两个大括号包裹起来：``\{\{ … \}\}``.
 内容可以是任何Python表达式，表达式会使用当前的 autoescape设置转义并插入到输出中。
-其他模板指令使用 `{\%    \%}`。这些标签会被转义成 ``{{!``和 ``{\%!`` ，如果你需要插入 ``{{``或者 ``{\%``到输出中。
+其他模板指令使用 `\{\%    \%\}`。这些标签会被转义成 ``\{\{!``和 ``\{\%!`` ，如果你需要插入 ``\{\{``或者 ``\{\%``到输出中。
 
-    {\% apply *function* \%}...{\% end \%}
+    \{\% apply *function* \%\}...\{\% end \%\}
  
  Applies a function to the output of all template code between ``apply``
  and ``end``
 
 将这个标签之间的模板输出作为一个参数应用到一个方法，如下：
 
-    {\% apply linkify \%}{{name}} said: {{message}}{\% end \%}
+    \{\% apply linkify \%\}\{\{name\}\} said: \{\{message\}\}\{\% end \%\}
 
-    {\% autoescape *function* \%}
+    \{\% autoescape *function* \%\}
 
 Sets the autoescape mode for the current file.  This does not affect
-other files, even those referenced by ``{\% include \%}``.  Note that
+other files, even those referenced by ``\{\% include \%\}``.  Note that
 autoescaping can also be configured globally, at the `Application`
 or `Loader`.
 
 这个标签用来设置当前文件的自动转义模式。这项设置对其他文件无效，即时是哪些插入了当前文件的模板。
 自动转义也能够在Application和Loader中全局设置。
     
-    {\% autoescape xhtml_escape \%}
-    {\% autoescape None \%}
+    \{\% autoescape xhtml_escape \%\}
+    \{\% autoescape None \%\}
 
 
-    {\% block *name* \%}...{\% end \%}
+    \{\% block *name* \%\}...\{\% end \%\}
 
-Indicates a named, replaceable block for use with ``{\% extends \%}``.
+Indicates a named, replaceable block for use with ``\{\% extends \%\}``.
 Blocks in the parent template will be replaced with the contents of
 the same-named block in a child template.::
-表示一个命名的可以被替换的块， 和``{\% extends \%}``一起使用。在父模板中的这些块将被自模板中同名的块替代
+表示一个命名的可以被替换的块， 和``\{\% extends \%\}``一起使用。在父模板中的这些块将被自模板中同名的块替代
     
     <!-- base.html -->
-    <title>{\% block title \%}Default title{\% end \%}</title>
+    <title>\{\% block title \%\}Default title\{\% end \%\}</title>
     <!-- mypage.html -->
-    {\% extends "base.html" \%}
-    {\% block title \%}My page title{\% end \%}
+    \{\% extends "base.html" \%\}
+    \{\% block title \%\}My page title\{\% end \%\}
 
     
-    {\% comment ... \%}
+    \{\% comment ... \%\}
 
 A comment which will be removed from the template output.  Note that
-there is no ``{\% end \%}`` tag; the comment goes from the word ``comment``
-to the closing ``\%}`` tag.
-注释块，不会输出。注意不需要 `{\% end \%}` 标签；
+there is no ``\{\% end \%\}`` tag; the comment goes from the word ``comment``
+to the closing ``\%\}`` tag.
+注释块，不会输出。注意不需要 `\{\% end \%\}` 标签；
 
 
-    {\% extends *filename* \%}
+    \{\% extends *filename* \%\}
 
 Inherit from another template.  Templates that use ``extends`` should
 contain one or more ``block`` tags to replace content from the parent
 template.  Anything in the child template not contained in a ``block``
-tag will be ignored.  For an example, see the ``{\% block \%}`` tag.
-继承其他的模板。使用extends标签的模板需要包含一个到多个block标签用来替换父模板中的同名的块。子模板中任何不在块中的内容将被忽略掉。例子可参见 ``{\% block \%}``标签那一节
+tag will be ignored.  For an example, see the ``\{\% block \%\}`` tag.
+继承其他的模板。使用extends标签的模板需要包含一个到多个block标签用来替换父模板中的同名的块。子模板中任何不在块中的内容将被忽略掉。例子可参见 ``\{\% block \%\}``标签那一节
 
-    {\% for *var* in *expr* \%}...{\% end \%}
+    \{\% for *var* in *expr* \%\}...\{\% end \%\}
 
 Same as the python ``for`` statement.
 for循环标签，等同于Python中的for表达式
 
-    {\% from *x* import *y* \%}
+    \{\% from *x* import *y* \%\}
 
 Same as the python ``import`` statement.
 import标签，等同于import表达式
 
-    {\% if *condition* \%}...{\% elif *condition* \%}...{\% else \%}...{\% end \%}
+    \{\% if *condition* \%\}...\{\% elif *condition* \%\}...\{\% else \%\}...\{\% end \%\}
 
 Conditional statement - outputs the first section whose condition is
 true.  (The ``elif`` and ``else`` sections are optional)
 if条件表达式标签，等同于python的if … else … 表达式
 
-    {\% import *module* \%}
+    \{\% import *module* \%\}
 
 Same as the python ``import`` statement.
 import 标签的另一种写法
 
-    {\% include *filename* \%}
+    \{\% include *filename* \%\}
 
 Includes another template file.  The included file can see all the local
 variables as if it were copied directly to the point of the ``include``
-directive (the ``{\% autoescape \%}`` directive is an exception).
-Alternately, ``{\% module Template(filename, **kwargs) \%}`` may be used
+directive (the ``\{\% autoescape \%\}`` directive is an exception).
+Alternately, ``\{\% module Template(filename, **kwargs) \%\}`` may be used
 to include another template with an isolated namespace.
 引用另外的模板文件。被引入的文件可以访问引入它的模板的所有locals变量，相当于是直接copy了被引入模板文件的内容。autoescape节有例子。
-另外``{\% module Template(filename,**kwargs) \%}``可以用来引入一个模板文件在一个独立的namespace中
+另外``\{\% module Template(filename,**kwargs) \%\}``可以用来引入一个模板文件在一个独立的namespace中
 
-    {\% module *expr* \%}
+    \{\% module *expr* \%\}
 
 Renders a `~tornado.web.UIModule`.  The output of the ``UIModule`` is
 not escaped::
 插入一个UI模块的标签，UI模块的输出没有经过转义的
     
-    {\% module Template("foo.html", arg=42) \%}
+    \{\% module Template("foo.html", arg=42) \%\}
 
-    {\% raw *expr* \%}
+    \{\% raw *expr* \%\}
 
 Outputs the result of the given expression without autoescaping.
 不经过转义输出一个表达式的值
     
-    {\% set *x* = *y* \%}
+    \{\% set *x* = *y* \%\}
 
 Sets a local variable.
 创建一个本地变量
 
-    {\% try \%}...{\% except \%}...{\% finally \%}...{\% end \%}
+    \{\% try \%\}...\{\% except \%\}...\{\% finally \%\}...\{\% end \%\}
 
 Same as the python ``try`` statement.
 和Python 的try … except …  块特性一致
 
-    {\% while *condition* \%}... {\% end \%}
+    \{\% while *condition* \%\}... \{\% end \%\}
 
 Same as the python ``while`` statement.
 和Python里while语句一致
