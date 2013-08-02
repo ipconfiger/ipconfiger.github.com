@@ -10,9 +10,9 @@ body {
 #header {
   font-family: 'Lato';
   padding: 25px;
-  background: #e4d4a3;
+  background: url(/images/fabric_plaid.png);
   margin-bottom: 45px;
-  color: #333; }
+  color: #000000; }
   #header .inner {
     text-align: left;
     width: 725px;
