@@ -1,6 +1,6 @@
 --- 
 layout: post
-title: 用MySQL数据库来支持Schemaless的数据库存储方案
+title: MySQL数据库支持Schemaless的数据库存储方案
 ---
 
 在PyCon上有童鞋提供了一个类似概念的分享，不过不大适合一般类型的互联网项目，感觉有点过于另类。不过我实现这个方案是在看到PyCon的分享之前。算是同样的诉求不同的实现方式吧。且我这里只是实现了一个数据访问的组件而不是Server。
