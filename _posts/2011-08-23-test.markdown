@@ -8,7 +8,7 @@ us imperdiet cursus mi congue. Cras ante augue, aliquam feugiat elementum quis, 
 Sed et lorem orci. Nullam consectetur elementum nibh, at aliquam metus adipiscing eget. Ut tincidunt fermentum urna, a eleifend dui volutpat eget. Integer varius nunc nec nulla tristique interdum. Suspendisse imperdiet libero sit amet lacus elementum nec dignissim dui accumsan. Curabitur at felis nunc, eu fermentum nisl. Curabitur quis ante non nisl hendrerit varius. Aliquam quis diam non massa gravida malesuada eu quis mi. Aenean tincidunt nunc vel sapien fermentum eu aliquam arcu tempor. Nulla risus
 
 {% highlight ruby %}
-def func():
-    doc={"id":123}
-    print doc
+    def func():
+        doc={"id":123}
+        print doc
 {% endhighlight %}
