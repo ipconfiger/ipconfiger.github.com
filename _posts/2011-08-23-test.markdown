@@ -12,3 +12,5 @@ Sed et lorem orci. Nullam consectetur elementum nibh, at aliquam metus adipiscin
         doc={"id":123}
         print doc
 {% endhighlight %}
+
+CREATE USER alex WITH PASSWORD '1qasw2';
