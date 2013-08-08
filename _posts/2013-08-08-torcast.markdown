@@ -1,0 +1,52 @@
+---
+layout: post
+title: 基于Redis实现多个tornado进程间消息通信
+---
+
+说实话懒了很久没写过东西了，重头写起来主要是为了备忘
+***
+tornado是一个在进程内单线程运行的web服务框架，虽然是单线程但是内部的IO都采用的非阻塞式的设计，所以跑起来速度是杠杠的。单进程空载的qps可以达到3500/s（官网数据）。但是好汉扛不过人多，所以大多数时候是需要多个进程一起工作来横向扩展处理能力，有得时候甚至需要多台服务器一起来，这个时候前端会有个反向代理来把所有的进程的请求管理起来，比如nginx，但是这个时候基于longpulling的一些应用就跑不起来了，比如tornado自带的那个chatroom的例子。Tornado自身没有实现http协议以外的异步IO，但是提供了IOStream可供我们来扩展，所以用IOStream和外部的消息分发的进程异步通信就能达到我们的目的，我这里使用Redis来实现消息分发。
+redis是一个高性能的内存KV数据库，同时也具备简单高效的pubsub的能力，而且通信协议相当的简洁高效方便实现。redis的python client是阻塞的，所以这里我会用IOStream实现redis通信协议Publish和Subscribe这一部分。
+首先来看IOStream，IOStream是对socket的异步封装，然后将socket事件注册到IOLoop中，这样由Tornado的事件主循环来控制socket的异步事件而不需要开启新的线程从而躲开GIL的墙。使用上IOStream很简单，把一个socket放进去就好了。
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+    stream = tornado.iostream.IOStream(sock)
+    stream.connect((host, port))
+
+这样子一个包装过的socket就可用了。
+IOStream有几个非阻塞读的方法封装，包括
+
+1. read_until
+2. read_bytes
+3. read_until_close
+
+这三个方法都需要设定一个回调函数。read_until是设定一个间隔符号，直到读到这个间隔符号就执行回调函数。read_bytes是读取设定长度的byte，读满就执行回调函数。read_until_close是缓冲所有数据，直到链接关闭再执行回调函数。
+
+IOStream的读写的方法都是非阻塞的，所以等待数据到达的方式是这样子的（以基于文本行的协议为例子）：
+
+    def recive(self):
+        def on_line(data):
+            self.when_line(data[:-2])
+            self.recive()
+        self.stream.read_until("\r\n", on_line)
+  
+
+由于Tornado的IOLoop一旦start起来就是个死循环，所以这些一定要放在在start执行前，在start之后的代码都没有执行的机会了。
+
+然后就是用IOStream来实现Redis的通信协议了，不得不说这个协议真是简洁高效到可怕，如果不需要实现redis的所有命令的话其实我们只需要很少的代码就能实现。redis的通信协议参见 [官方文档](http://redis.io/topics/protocol) [中文翻译版](http://redis.cn/topics/protocol.html)
+
+通过协议规范可知其实简单的来看可以把redis的通信交互当成是基于文本行的协议来对待，当然如果想高效率的交互大量的数据还是可以用头+body的方式通过read_bytes来读取大量内容的部分。由于只花了一天来实现所有的功能包括demo，所以我直接用文本行的方式来处理，并且忽略了message以外的所有返回数据。
+
+Redis数据库连接上了后需要select db，和subscribe这两个必要的操作才能开始等待消息到来，所以我们先封装Redis的命令。
+
+    def parseCommand(*argv):
+        output = [["*",str(len(argv)),"\r\n"]] + [["$",str(len(p)),"\r\n",p,"\r\n"] for p in map(str,argv)] + [["\r\n",""]]
+        return "".join(reduce(lambda i1,i2:i1+i2 ,output))
+            
+由于redis的协议将命令和参数都一视同仁，所以处理起来是相当的简单，上面的3行代码基本上就可以输出所有的Redis命令了。
+
+最后是解析redis的返回值了。根据redis的协议，多行返回是*开头，所以读取到 *就认为是有消息来了， *后面跟的是返回的条数，而每条都有一个标明自己长度的头，所以一共是条数x2这么多行，所以就获取完条数x2行后去掉$开头的行，剩下的就是数据了，第一个是类型，我们这里只需要获取message类型的，就放过其他数据，只需要遇到第一个值是message的执行回调函数返回频道名和消息本身就行了。
+
+具体项目放在 [https://github.com/ipconfiger/TorCast](https://github.com/ipconfiger/TorCast) 由于实现很仓促还是有很大的优化空间，暂时不建议在生产环境使用，其中Demo就是一个聊天室，类似tornado的demo，不过是可以在nginx做反向代理的多进程环境使用的。反正实现仓促代码混乱，如亮瞎氪金宝眼还请原谅则个。
+
+另，我部署了一个demo在 [http://42.121.19.100:8000](http://42.121.19.100:8000) 欢迎前来刷屏，看看多少人可以玩坏它
