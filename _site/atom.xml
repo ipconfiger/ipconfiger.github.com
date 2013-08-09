@@ -4,7 +4,7 @@
  <title>BLOG_NAME</title>
  <link href="YOUR_URL/atom.xml" rel="self"/>
  <link href="YOUR_URL"/>
- <updated>2013-08-09T10:03:10+08:00</updated>
+ <updated>2013-08-09T10:22:23+08:00</updated>
  <id>BLOG_URL</id>
  <author>
    <name>BLOG_NAME</name>
@@ -178,11 +178,10 @@ IOStream有几个非阻塞读的方法封装，包括&lt;/p&gt;
 
 &lt;p&gt;Sed et lorem orci. Nullam consectetur elementum nibh, at aliquam metus adipiscing eget. Ut tincidunt fermentum urna, a eleifend dui volutpat eget. Integer varius nunc nec nulla tristique interdum. Suspendisse imperdiet libero sit amet lacus elementum nec dignissim dui accumsan. Curabitur at felis nunc, eu fermentum nisl. Curabitur quis ante non nisl hendrerit varius. Aliquam quis diam non massa gravida malesuada eu quis mi. Aenean tincidunt nunc vel sapien fermentum eu aliquam arcu tempor. Nulla risus&lt;/p&gt;
 
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;python&quot;&gt;    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;func&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;():&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;doc&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-        &lt;span class=&quot;k&quot;&gt;print&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;doc&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
+&lt;pre&gt;&lt;code&gt;def func():
+    doc={&quot;id&quot;:123}
+    print doc
+&lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;CREATE USER alex WITH PASSWORD '1qasw2';&lt;/p&gt;
 </content>
