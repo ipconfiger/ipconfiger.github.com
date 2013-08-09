@@ -9,11 +9,11 @@ tornado是一个在进程内单线程运行的web服务框架，虽然是单线�
 redis是一个高性能的内存KV数据库，同时也具备简单高效的pubsub的能力，而且通信协议相当的简洁高效方便实现。redis的python client是阻塞的，所以这里我会用IOStream实现redis通信协议Publish和Subscribe这一部分。
 首先来看IOStream，IOStream是对socket的异步封装，然后将socket事件注册到IOLoop中，这样由Tornado的事件主循环来控制socket的异步事件而不需要开启新的线程从而躲开GIL的墙。使用上IOStream很简单，把一个socket放进去就好了。
 
-    {% highlight python %}
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
-    stream = tornado.iostream.IOStream(sock)
-    stream.connect((host, port))
-    {% endhighlight %}
+{% highlight python %}
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+stream = tornado.iostream.IOStream(sock)
+stream.connect((host, port))
+{% endhighlight %}
 
 这样子一个包装过的socket就可用了。
 IOStream有几个非阻塞读的方法封装，包括
@@ -26,13 +26,13 @@ IOStream有几个非阻塞读的方法封装，包括
 
 IOStream的读写的方法都是非阻塞的，所以等待数据到达的方式是这样子的（以基于文本行的协议为例子）：
 
-    {% highlight python %}
-    def recive(self):
-        def on_line(data):
-            self.when_line(data[:-2])
-            self.recive()
-        self.stream.read_until("\r\n", on_line)
-    {% endhighlight %}
+{% highlight python %}
+def recive(self):
+    def on_line(data):
+        self.when_line(data[:-2])
+        self.recive()
+    self.stream.read_until("\r\n", on_line)
+{% endhighlight %}
 
 由于Tornado的IOLoop一旦start起来就是个死循环，所以这些一定要放在在start执行前，在start之后的代码都没有执行的机会了。
 
@@ -42,11 +42,11 @@ IOStream的读写的方法都是非阻塞的，所以等待数据到达的方式
 
 Redis数据库连接上了后需要select db，和subscribe这两个必要的操作才能开始等待消息到来，所以我们先封装Redis的命令。
 
-    {% highlight python %}
-    def parseCommand(*argv):
-        output = [["*",str(len(argv)),"\r\n"]] + [["$",str(len(p)),"\r\n",p,"\r\n"] for p in map(str,argv)]
-        return "".join(reduce(lambda i1,i2:i1+i2 ,output))
-    {% endhighlight %}   
+{% highlight python %}
+def parseCommand(*argv):
+    output = [["*",str(len(argv)),"\r\n"]] + [["$",str(len(p)),"\r\n",p,"\r\n"] for p in map(str,argv)]
+    return "".join(reduce(lambda i1,i2:i1+i2 ,output))
+{% endhighlight %}   
             
 由于redis的协议将命令和参数都一视同仁，所以处理起来是相当的简单，上面的3行代码基本上就可以输出所有的Redis命令了。
 
