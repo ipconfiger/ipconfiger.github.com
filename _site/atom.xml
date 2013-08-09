@@ -4,7 +4,7 @@
  <title>BLOG_NAME</title>
  <link href="YOUR_URL/atom.xml" rel="self"/>
  <link href="YOUR_URL"/>
- <updated>2013-08-03T00:57:46+08:00</updated>
+ <updated>2013-08-09T10:03:10+08:00</updated>
  <id>BLOG_URL</id>
  <author>
    <name>BLOG_NAME</name>
@@ -12,238 +12,280 @@
 
  
  <entry>
+   <title>基于Redis实现多个tornado进程间消息通信</title>
+   <link href="YOUR_URL/2013/08/08/torcast/"/>
+   <updated>2013-08-08T00:00:00+08:00</updated>
+   <id>BLOG_URL/2013/08/08/torcast</id>
+   <content type="html">&lt;p&gt;说实话懒了很久没写过东西了，重头写起来主要是为了备忘&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;tornado是一个在进程内单线程运行的web服务框架，虽然是单线程但是内部的IO都采用的非阻塞式的设计，所以跑起来速度是杠杠的。单进程空载的qps可以达到3500/s（官网数据）。但是好汉扛不过人多，所以大多数时候是需要多个进程一起工作来横向扩展处理能力，有得时候甚至需要多台服务器一起来，这个时候前端会有个反向代理来把所有的进程的请求管理起来，比如nginx，但是这个时候基于longpulling的一些应用就跑不起来了，比如tornado自带的那个chatroom的例子。Tornado自身没有实现http协议以外的异步IO，但是提供了IOStream可供我们来扩展，所以用IOStream和外部的消息分发的进程异步通信就能达到我们的目的，我这里使用Redis来实现消息分发。
+redis是一个高性能的内存KV数据库，同时也具备简单高效的pubsub的能力，而且通信协议相当的简洁高效方便实现。redis的python client是阻塞的，所以这里我会用IOStream实现redis通信协议Publish和Subscribe这一部分。
+首先来看IOStream，IOStream是对socket的异步封装，然后将socket事件注册到IOLoop中，这样由Tornado的事件主循环来控制socket的异步事件而不需要开启新的线程从而躲开GIL的墙。使用上IOStream很简单，把一个socket放进去就好了。&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;python&quot;&gt;&lt;span class=&quot;n&quot;&gt;sock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;socket&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;socket&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;socket&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AF_INET&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;socket&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SOCK_STREAM&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;stream&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tornado&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iostream&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;IOStream&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sock&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;stream&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;connect&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;host&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;port&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;这样子一个包装过的socket就可用了。
+IOStream有几个非阻塞读的方法封装，包括&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;read_until&lt;/li&gt;
+&lt;li&gt;read_bytes&lt;/li&gt;
+&lt;li&gt;read_until_close&lt;/li&gt;
+&lt;/ol&gt;
+
+
+&lt;p&gt;这三个方法都需要设定一个回调函数。read_until是设定一个间隔符号，直到读到这个间隔符号就执行回调函数。read_bytes是读取设定长度的byte，读满就执行回调函数。read_until_close是缓冲所有数据，直到链接关闭再执行回调函数。&lt;/p&gt;
+
+&lt;p&gt;IOStream的读写的方法都是非阻塞的，所以等待数据到达的方式是这样子的（以基于文本行的协议为例子）：&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;python&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;recive&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;on_line&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;when_line&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[:&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
+        &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;recive&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stream&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;read_until&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\r\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;on_line&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;由于Tornado的IOLoop一旦start起来就是个死循环，所以这些一定要放在在start执行前，在start之后的代码都没有执行的机会了。&lt;/p&gt;
+
+&lt;p&gt;然后就是用IOStream来实现Redis的通信协议了，不得不说这个协议真是简洁高效到可怕，如果不需要实现redis的所有命令的话其实我们只需要很少的代码就能实现。redis的通信协议参见 &lt;a href=&quot;http://redis.io/topics/protocol&quot;&gt;官方文档&lt;/a&gt; &lt;a href=&quot;http://redis.cn/topics/protocol.html&quot;&gt;中文翻译版&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;通过协议规范可知其实简单的来看可以把redis的通信交互当成是基于文本行的协议来对待，当然如果想高效率的交互大量的数据还是可以用头+body的方式通过read_bytes来读取大量内容的部分。由于只花了一天来实现所有的功能包括demo，所以我直接用文本行的方式来处理，并且忽略了message以外的所有返回数据。&lt;/p&gt;
+
+&lt;p&gt;Redis数据库连接上了后需要select db，和subscribe这两个必要的操作才能开始等待消息到来，所以我们先封装Redis的命令。&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;python&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;parseCommand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;argv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;output&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;*&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;argv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)),&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\r\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;$&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)),&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\r\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\r\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;ow&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;argv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)]&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;reduce&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;lambda&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;由于redis的协议将命令和参数都一视同仁，所以处理起来是相当的简单，上面的3行代码基本上就可以输出所有的Redis命令了。&lt;/p&gt;
+
+&lt;p&gt;最后是解析redis的返回值了。根据redis的协议，多行返回是*开头，所以读取到 *就认为是有消息来了， *后面跟的是返回的条数，而每条都有一个标明自己长度的头，所以一共是条数x2这么多行，所以就获取完条数x2行后去掉$开头的行，剩下的就是数据了，第一个是类型，我们这里只需要获取message类型的，就放过其他数据，只需要遇到第一个值是message的执行回调函数返回频道名和消息本身就行了。&lt;/p&gt;
+
+&lt;p&gt;具体项目放在 &lt;a href=&quot;https://github.com/ipconfiger/TorCast&quot;&gt;https://github.com/ipconfiger/TorCast&lt;/a&gt; 由于实现很仓促还是有很大的优化空间，暂时不建议在生产环境使用，其中Demo就是一个聊天室，类似tornado的demo，不过是可以在nginx做反向代理的多进程环境使用的。反正实现仓促代码混乱，如亮瞎氪金宝眼还请原谅则个。&lt;/p&gt;
+
+&lt;p&gt;另，我部署了一个demo在 &lt;a href=&quot;http://42.121.19.100:8000&quot;&gt;http://42.121.19.100:8000&lt;/a&gt; 欢迎前来刷屏，看看多少人可以玩坏它&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>MySQL数据库支持Schemaless的数据库存储方案</title>
+   <link href="YOUR_URL/2011/12/11/mysql-schemaless/"/>
+   <updated>2011-12-11T00:00:00+08:00</updated>
+   <id>BLOG_URL/2011/12/11/mysql-schemaless</id>
+   <content type="html">&lt;p&gt;在PyCon上有童鞋提供了一个类似概念的分享，不过不大适合一般类型的互联网项目，感觉有点过于另类。不过我实现这个方案是在看到PyCon的分享之前。算是同样的诉求不同的实现方式吧。且我这里只是实现了一个数据访问的组件而不是Server。&lt;/p&gt;
+
+&lt;p&gt;首先本文的方法来自FriendFeed分享的如何使用MySQL数据库的分享。简而言之就是把Python对象直接dumps后zip压缩存储在MySQL一个字段里。这样不就Schemaless了么？存什么数据类型，类什么结构，MySQL都不需要知道，加个属性什么的都不需要修改数据库表结构，对于业务快速变更、快速增长的互联网业务来说再合适不过了。访问对象直接通过主键查询，快速直接。but，查询怎么办？有的童鞋可能会问。OK，查询这事得分两说，如果是简单的检索，可以通过建索引表的方式来解决，或者呢用外部的索引，比如lucent，还能全文检索哦。现在而今眼目下我实现了索引表索引的方式，因为外部的索引方式比较千奇百怪，所以如果需要可以根据具体情况自己来写一个，反正实现相应的几个方法就行。&lt;/p&gt;
+
+&lt;p&gt;直接上一个例子来说明。假设要实现一个blog，需要存blog的信息，先定义一个blog的模型类(需要import什么大家自动脑补)&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/ipconfiger/6142119.js&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;这个connection是因为我还没想好如何能无缝结合到Django中又能兼顾脱离Django独立使用的暂时措施，完成版会去掉&lt;/p&gt;
+
+&lt;p&gt;如果在使用django的话只需要 python manage.py shell 然后 Blog.objects.create_table()&lt;/p&gt;
+
+&lt;p&gt;这个时候会自动创建模型定义的表和索引表&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/ipconfiger/6142155.js&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;这个时候，可以通过 Blog.objects.create(title=u&quot;标题&quot;,content=u&quot;内容&quot;,post_date=datetime.datetime.now(),auther=user) 或者Blog.objects.create(title=u&quot;标题&quot;,content=u&quot;内容&quot;,post_date=datetime.datetime.now(),auther=user.id)&lt;/p&gt;
+
+&lt;p&gt;就能够创建一个Blog的对象。这个时候blogs表和两个索引表都会插入数据。不过blogs表中的object列是人类无法理解的火星文..........&lt;/p&gt;
+
+&lt;p&gt;通过id直接获取对象  Blog.objects.get(1),根据索引获取  Blog.objects.auther.query(auther=user.id) 或者  Blog.objects.auther.query(auther=user)&lt;/p&gt;
+
+&lt;p&gt;这个会生成SQL，SELECT &lt;code&gt;id&lt;/code&gt; FROM  &lt;code&gt;blog_idx_auther&lt;/code&gt; WHERE &lt;code&gt;auther&lt;/code&gt;=%s 然后取出match到对象的id列表，然后遍历id列表，通过 Blog.objects.get(id)获得的对象列表。&lt;/p&gt;
+
+&lt;p&gt;Blog.objects.get(id)的时候是有对象缓存的（现阶段通过redis实现），所以经过测试，速度是靠谱的。而相对MangoDB来说，MySQL的数据存储也更加靠谱一点，所以相比换现在而今眼目下还不怎么靠谱的mangodb来作为主存储来说，基于MySQL的Schemaless方案还是相对靠谱的。&lt;/p&gt;
+
+&lt;p&gt;项目地址：&lt;a href=&quot;https://github.com/ipconfiger/free4my&quot;&gt;https://github.com/ipconfiger/free4my&lt;/a&gt; 内附demo的blog实现一枚&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>让Django支持数据库长连接</title>
+   <link href="YOUR_URL/2011/11/12/django-long-conn/"/>
+   <updated>2011-11-12T00:00:00+08:00</updated>
+   <id>BLOG_URL/2011/11/12/django-long-conn</id>
+   <content type="html">&lt;p&gt;书接上回&lt;/p&gt;
+
+&lt;p&gt;上回我们说到：&lt;a href=&quot;http://www.cnblogs.com/Alexander-Lee/archive/2011/05/02/tornado_host_django.html&quot;&gt;《在生产系统使用Tornado WebServer来代替FastCGI加速你的Django应用》&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;那么现在很流行用一些高性能的nonblock的app server来host Django的应用，这些Server可以看做是一个单进程单线程的程序，然后用nginx在前端反向代理并且负载均衡到N多个后端工作进城来充分利用多CPU的性能，当然这部分的配置工作在上回已经说得很清楚了。但是对于Django来说有一个问题。因为Django的数据库连接是在查询的时候实时创建的，用完就会关掉，这样就会频繁的开闭连接。但是对于Tornado这种Server来说这种方式是低效的。这种Server最高效的工作模式是每个进程开启一个连接，并长期保持不关闭。本文的目的就是尝试使Django改变一贯的作风，采用这种高效的工作模式。本文基于Django1.3的版本，如果是低版本可以稍加更改一样可以使用。&lt;/p&gt;
+
+&lt;p&gt;Django的数据库可以通过配置使用专门定制的Backend，我们就从这里入手。&lt;/p&gt;
+
+&lt;p&gt;首先我们看看Django自带的Backend是如何实现的。在Django官网上可以看到自带MySql的Package结构，可以点击 此处 前往瞻仰。&lt;/p&gt;
+
+&lt;p&gt;通观源码我们可以发现，Django基本上是封装了MySQLdb的Connection和Cursor这两个对象。而且重头实现整个Backend既不实际而且也不能从根本上解决问题。所以我们可以换一个思路。所有的数据库操作都是从获取Connection对象开始的，而获取Connection对象只有一个入口，就是MySQLdb.connect这个函数。所以我们只需要包装MySQLdb这个模块，用我们自己的connect方法替代原本的，这样就从根源上解决了问题。我们在包装器内部维护MySQLdb的Connection对象，使其保持长连接，每次connect被调用的时候判断一下，如果连接存在就返回现有连接，不就完美了吗？所以我们可以分分钟写下第一个解决方案：&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/ipconfiger/6141949.js&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;把上面代码存到一个叫pool.py的文件里。然后把Django源码里的db/backend/mysql这个package拷贝出来，单独存到我们project目录里一个mysql_pool的目录里。然后修改其中的base.py，在顶上import的部分，找到 import MySQLdb as Database 这句，用下面代码替换之&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/ipconfiger/6141966.js&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;这样我们就用自己的模块替换了MySQLdb的，当要connect的时候判断到有连接的时候就不重新创建连接了。&lt;/p&gt;
+
+&lt;p&gt;把站点跑起来看，结果如何？刷新几次后报错了。Why？看看日志可以看到如下的错误：&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/ipconfiger/6142422.js&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;看来我们光是包装了MySQLdb本身还不行，在connect后Django获取了Connection的对象，之后就能为所欲为，他用完后很自觉的关掉了，因为他直觉的以为每次connect都拿到了新的Connection对象。所以我们必须把Connection对象也包装了了。所以升级后的解决方案代码如下：&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/ipconfiger/6141996.js&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;　　我们增加了一个_ConnectionWrapper类来代理Connection对象，然后屏蔽掉close函数。把站点跑起来后发现不会出现之前的问题了，跑起来也顺畅不少。但是过了几个小时后问题又来了。因为MySQLdb的Connection有个很蛋痛的问题，就是连接闲置8小时后会自己断掉。不过要解决这个问题很简单，我们发现连接如果闲置了快8小时就close掉重新建立一个连接不就行了么？所以最后解决方案的代码如下：
+　&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/ipconfiger/6142002.js&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;就此问题解决，世界终于清净了&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
    <title>翻译处女作欢迎批评指正－tornado的模板系统文档</title>
-   <link href="YOUR_URL/2012/06/12/translate-tornado-template-document/"/>
-   <updated>2012-06-12T00:00:00+08:00</updated>
-   <id>BLOG_URL/2012/06/12/translate-tornado-template-document</id>
-   <content type="html">&lt;hr /&gt;
-
-&lt;p&gt;tornado的文档非常的匮乏，不过这是表面现象，其实个中乾坤都在源文件里，源文件的注释里有非常的文档资料，值得仔细研究。今日将模板系统的内容翻译之，以供日后使用。此处意译为主，并未逐字翻译
-A simple template system that compiles templates to Python code.
-一个简单的模板系统，将模板编译成python代码&lt;/p&gt;
-
-&lt;h2&gt;Basic usage looks like(基本的用法如下)：&lt;/h2&gt;
-
-&lt;pre&gt;&lt;code&gt;t = template.Template(&quot;&amp;lt;html&amp;gt;\{\{ myvalue \}\}&amp;lt;/html&amp;gt;&quot;)
-print t.generate(myvalue=&quot;XXX&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Loader is a class that loads templates from a root directory and caches
-the compiled templates::
-加载器是一个从根目录加载模板文件并编译缓存模板的类&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;loader = template.Loader(&quot;/home/btaylor&quot;)
-print loader.load(&quot;test.html&quot;).generate(myvalue=&quot;XXX&quot;)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;We compile all templates to raw Python. Error-reporting is currently... uh,
-interesting. Syntax for the templates::
-我们编译所有模板为python代码，（目前会报错。。。。注：可能是开发时候写下来的）&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;### base.html
-&amp;lt;html&amp;gt;
-  &amp;lt;head&amp;gt;
-    &amp;lt;title&amp;gt;\{\% block title \%\}Default title\{\% end \%\}&amp;lt;/title&amp;gt;
-  &amp;lt;/head&amp;gt;
-  &amp;lt;body&amp;gt;
-    &amp;lt;ul&amp;gt;
-      \{\% for student in students \%\}
-        \{\% block student \%\}
-          &amp;lt;li&amp;gt;\{\{ escape(student.name) \}\}&amp;lt;/li&amp;gt;
-        \{\% end \%\}
-      \{\% end \%\}
-    &amp;lt;/ul&amp;gt;
-  &amp;lt;/body&amp;gt;
-&amp;lt;/html&amp;gt;
-### bold.html
-\{\% extends &quot;base.html&quot; \%\}
-\{\% block title \%\}A bolder title\{\% end \%\}
-\{\% block student \%\}
-  &amp;lt;li&amp;gt;&amp;lt;span style=&quot;bold&quot;&amp;gt;\{\{ escape(student.name) \}\}&amp;lt;/span&amp;gt;&amp;lt;/li&amp;gt;
-\{\% end \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Unlike most other template systems, we do not put any restrictions on the
-expressions you can include in your statements. if and for blocks get
-translated exactly into Python, you can do complex expressions like::
-与其他模板系统不同的是，我们没有对你在模板声名中植入的表达式做任何限制。if和for 块完全支持Python的语法，你可以使用完整的写法，如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% for student in [p for p in people if p.student and p.age &amp;gt; 23] \%\}
-    &amp;lt;li&amp;gt;\{\{ escape(student.name) \}\}&amp;lt;/li&amp;gt;
-\{\% end \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Translating directly to Python means you can apply functions to expressions
-easily, like the escape() function in the examples above. You can pass
-functions in to your template just like any other variable::
-直接转义成python代码意味着你可以轻松的在表达式里调用方法，譬如上面调用escape函数的例子，你也可以将函数当成任何其他变量一样的传递到模板中&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;### Python code
-def add(x, y):
-   return x + y
-template.execute(add=add)
-### The template
-\{\{ add(1, 2) \}\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;We provide the functions escape(), url_escape(), json_encode(), and squeeze()
-to all templates by default.
-每个模板默认提供了 escape(), url_escape(), json_encode(), and squeeze() 这几个函数
-Typical applications do not create 'Template' or 'Loader' instances by
-hand, but instead use the 'render' and 'render_string' methods of
-'tornado.web.RequestHandler', which load templates automatically based
-on the 'template_path','Application' setting.
-默认的application不会手动创建Template和Loader的实例，而是通过调用'tornado.web.RequestHandler'实例中的 render，render_string 方法。
-这些方法通过Application的setting里面的'template_path'这一项的设置自动加载目录里的模板&lt;/p&gt;
-
-&lt;h2&gt;Syntax Reference(语法)&lt;/h2&gt;
-
-&lt;p&gt;Template expressions are surrounded by double curly braces: &lt;code&gt;\{\{ ... \}\}&lt;/code&gt;.
-The contents may be any python expression, which will be escaped according
-to the current autoescape setting and inserted into the output.  Other
-template directives use &lt;code&gt;\{\% \%\}&lt;/code&gt;.  These tags may be escaped as &lt;code&gt;\{\{!&lt;/code&gt;
-and &lt;code&gt;\{\%!&lt;/code&gt; if you need to include a literal &lt;code&gt;\{\{&lt;/code&gt; or &lt;code&gt;\{\%&lt;/code&gt; in the output.&lt;/p&gt;
-
-&lt;p&gt;模板表达式用两个大括号包裹起来：&lt;code&gt;\{\{ … \}\}&lt;/code&gt;.
-内容可以是任何Python表达式，表达式会使用当前的 autoescape设置转义并插入到输出中。
-其他模板指令使用 &lt;code&gt;\{\%    \%\}&lt;/code&gt;。这些标签会被转义成 &lt;code&gt;\{\{!&lt;/code&gt;和 &lt;code&gt;\{\%!&lt;/code&gt; ，如果你需要插入 &lt;code&gt;\{\{&lt;/code&gt;或者 &lt;code&gt;\{\%&lt;/code&gt;到输出中。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% apply *function* \%\}...\{\% end \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt; Applies a function to the output of all template code between &lt;code&gt;apply&lt;/code&gt;
- and &lt;code&gt;end&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;将这个标签之间的模板输出作为一个参数应用到一个方法，如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% apply linkify \%\}\{\{name\}\} said: \{\{message\}\}\{\% end \%\}
-
-\{\% autoescape *function* \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Sets the autoescape mode for the current file.  This does not affect
-other files, even those referenced by &lt;code&gt;\{\% include \%\}&lt;/code&gt;.  Note that
-autoescaping can also be configured globally, at the &lt;code&gt;Application&lt;/code&gt;
-or &lt;code&gt;Loader&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;这个标签用来设置当前文件的自动转义模式。这项设置对其他文件无效，即时是哪些插入了当前文件的模板。
-自动转义也能够在Application和Loader中全局设置。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% autoescape xhtml_escape \%\}
-\{\% autoescape None \%\}
-
-
-\{\% block *name* \%\}...\{\% end \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Indicates a named, replaceable block for use with &lt;code&gt;\{\% extends \%\}&lt;/code&gt;.
-Blocks in the parent template will be replaced with the contents of
-the same-named block in a child template.::
-表示一个命名的可以被替换的块， 和&lt;code&gt;\{\% extends \%\}&lt;/code&gt;一起使用。在父模板中的这些块将被自模板中同名的块替代&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;&amp;lt;!-- base.html --&amp;gt;
-&amp;lt;title&amp;gt;\{\% block title \%\}Default title\{\% end \%\}&amp;lt;/title&amp;gt;
-&amp;lt;!-- mypage.html --&amp;gt;
-\{\% extends &quot;base.html&quot; \%\}
-\{\% block title \%\}My page title\{\% end \%\}
-
-
-\{\% comment ... \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;A comment which will be removed from the template output.  Note that
-there is no &lt;code&gt;\{\% end \%\}&lt;/code&gt; tag; the comment goes from the word &lt;code&gt;comment&lt;/code&gt;
-to the closing &lt;code&gt;\%\}&lt;/code&gt; tag.
-注释块，不会输出。注意不需要 &lt;code&gt;\{\% end \%\}&lt;/code&gt; 标签；&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% extends *filename* \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Inherit from another template.  Templates that use &lt;code&gt;extends&lt;/code&gt; should
-contain one or more &lt;code&gt;block&lt;/code&gt; tags to replace content from the parent
-template.  Anything in the child template not contained in a &lt;code&gt;block&lt;/code&gt;
-tag will be ignored.  For an example, see the &lt;code&gt;\{\% block \%\}&lt;/code&gt; tag.
-继承其他的模板。使用extends标签的模板需要包含一个到多个block标签用来替换父模板中的同名的块。子模板中任何不在块中的内容将被忽略掉。例子可参见 &lt;code&gt;\{\% block \%\}&lt;/code&gt;标签那一节&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% for *var* in *expr* \%\}...\{\% end \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Same as the python &lt;code&gt;for&lt;/code&gt; statement.
-for循环标签，等同于Python中的for表达式&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% from *x* import *y* \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Same as the python &lt;code&gt;import&lt;/code&gt; statement.
-import标签，等同于import表达式&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% if *condition* \%\}...\{\% elif *condition* \%\}...\{\% else \%\}...\{\% end \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Conditional statement - outputs the first section whose condition is
-true.  (The &lt;code&gt;elif&lt;/code&gt; and &lt;code&gt;else&lt;/code&gt; sections are optional)
-if条件表达式标签，等同于python的if … else … 表达式&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% import *module* \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Same as the python &lt;code&gt;import&lt;/code&gt; statement.
-import 标签的另一种写法&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% include *filename* \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Includes another template file.  The included file can see all the local
-variables as if it were copied directly to the point of the &lt;code&gt;include&lt;/code&gt;
-directive (the &lt;code&gt;\{\% autoescape \%\}&lt;/code&gt; directive is an exception).
-Alternately, &lt;code&gt;\{\% module Template(filename, **kwargs) \%\}&lt;/code&gt; may be used
-to include another template with an isolated namespace.
-引用另外的模板文件。被引入的文件可以访问引入它的模板的所有locals变量，相当于是直接copy了被引入模板文件的内容。autoescape节有例子。
-另外&lt;code&gt;\{\% module Template(filename,**kwargs) \%\}&lt;/code&gt;可以用来引入一个模板文件在一个独立的namespace中&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% module *expr* \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Renders a &lt;code&gt;~tornado.web.UIModule&lt;/code&gt;.  The output of the &lt;code&gt;UIModule&lt;/code&gt; is
-not escaped::
-插入一个UI模块的标签，UI模块的输出没有经过转义的&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% module Template(&quot;foo.html&quot;, arg=42) \%\}
-
-\{\% raw *expr* \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Outputs the result of the given expression without autoescaping.
-不经过转义输出一个表达式的值&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% set *x* = *y* \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Sets a local variable.
-创建一个本地变量&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% try \%\}...\{\% except \%\}...\{\% finally \%\}...\{\% end \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Same as the python &lt;code&gt;try&lt;/code&gt; statement.
-和Python 的try … except …  块特性一致&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;\{\% while *condition* \%\}... \{\% end \%\}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Same as the python &lt;code&gt;while&lt;/code&gt; statement.
-和Python里while语句一致&lt;/p&gt;
+   <link href="YOUR_URL/2011/09/27/translate-tornado-template-document/"/>
+   <updated>2011-09-27T00:00:00+08:00</updated>
+   <id>BLOG_URL/2011/09/27/translate-tornado-template-document</id>
+   <content type="html">&lt;p&gt;jekyll的转义符太坑爹所以格式乱掉，还是看老地址吧&lt;a href=&quot;http://www.cnblogs.com/Alexander-Lee/archive/2011/09/27/tornado_template.html&quot;&gt;传送们&lt;/a&gt; ，以前的Blog文章内嵌入了太多代码，搬迁困难&lt;/p&gt;
 </content>
  </entry>
  
  <entry>
    <title>A Test Post</title>
-   <link href="YOUR_URL/2008/12/14/a-test-post/"/>
-   <updated>2008-12-14T00:00:00+08:00</updated>
-   <id>BLOG_URL/2008/12/14/a-test-post</id>
+   <link href="YOUR_URL/2011/08/23/test/"/>
+   <updated>2011-08-23T00:00:00+08:00</updated>
+   <id>BLOG_URL/2011/08/23/test</id>
    <content type="html">&lt;p&gt;us imperdiet cursus mi congue. Cras ante augue, aliquam feugiat elementum quis, ullamcorper id lacus. Phasellus quis lectus nec elit pretium scelerisque. Aliquam leo felis, semper vel pellentesque id, tincidunt sed nisi. In lacus diam, faucibus ut euismod non, hendrerit quis sem. In quis massa vitae quam feugiat tempus. In eleifend tincidunt tellus a euismod. Aenean elementum, nisl sit amet fringilla lobortis, quam turpis consectetur urna, nec sollicitudin arcu justo vel magna.&lt;/p&gt;
 
 &lt;p&gt;Sed et lorem orci. Nullam consectetur elementum nibh, at aliquam metus adipiscing eget. Ut tincidunt fermentum urna, a eleifend dui volutpat eget. Integer varius nunc nec nulla tristique interdum. Suspendisse imperdiet libero sit amet lacus elementum nec dignissim dui accumsan. Curabitur at felis nunc, eu fermentum nisl. Curabitur quis ante non nisl hendrerit varius. Aliquam quis diam non massa gravida malesuada eu quis mi. Aenean tincidunt nunc vel sapien fermentum eu aliquam arcu tempor. Nulla risus&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;python&quot;&gt;    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;func&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;():&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;doc&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;print&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;doc&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;CREATE USER alex WITH PASSWORD '1qasw2';&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>在生产系统使用Tornado WebServer来代替FastCGI加速你的Django应用</title>
+   <link href="YOUR_URL/2011/05/02/tornado-for-django/"/>
+   <updated>2011-05-02T00:00:00+08:00</updated>
+   <id>BLOG_URL/2011/05/02/tornado-for-django</id>
+   <content type="html">&lt;p&gt;由于换了工作，所以之前的游戏引擎暂时放下，但是不会停止的，这个项目会在我的业余时间来完成。&lt;/p&gt;
+
+&lt;p&gt;---------------------------------------闷骚的分割线，下面是正文-------------------------------------------&lt;/p&gt;
+
+&lt;p&gt;tornado我在之前的文章里已经有过多次介绍，在此就不详细介绍了，&lt;/p&gt;
+
+&lt;p&gt;详细介绍可参见：&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.cnblogs.com/Alexander-Lee/archive/2010/03/20/1690292.html&quot;&gt;玩蛇记-使用tornado构建高性能Web应用之一&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.cnblogs.com/Alexander-Lee/archive/2010/03/24/1693367.html&quot;&gt;玩蛇记-使用Tornado构建高性能Web之二-autoreload&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;由于官网被墙，讨论组也被墙（囧，万恶的墙）所以tornado的资料很少，官网的资料也语焉不详，所以很多童鞋对如何部署使用Tornado心里没底。所以本文的主要目的就是教会刚入门的新手如何在生产环境使用Tornado&lt;/p&gt;
+
+&lt;p&gt;Tornado是一个异步web框架和服务器，所以在开发longpulling的chat之类应用非常的合适，但是其实本身也是一个高性能的http服务器，也可以作为一个WSGIServer。所以即使你的网站没有使用Tornado的框架，而是用了web.py或者是Django来开发（傻瓜万岁），这个时候Tornado依然可以用来加速你的网站。使用Tornado来代替fastCGI可以大幅提高性能，且可以承载的并发能力也有了成倍的提高（大家可以自己Profile，本文只介绍如果做）。&lt;/p&gt;
+
+&lt;p&gt;下面我们开始来介绍如何配置。这里我们假设你的一个用Django写的网站在一台Linux的服务器上快乐地着（ubuntu or CentOS，没试过在其他发行版折腾过，windows？你在说笑吧），随着网站越来越红火，你越发感觉服务器不堪重负。这个时候Tornado出现了，他可以让你再苟延残喘好几个月，节约一大把的银子去把妹.............回到正题。根据官网的推荐部署方式，我们还是采用Nginx通过upstream来反向代理到N个Tornado的服务器实例上的部署方式。so&lt;/p&gt;
+
+&lt;p&gt;Setp1：安装supervisord&lt;/p&gt;
+
+&lt;p&gt;由于Tornado并没有自身提供Daemon的能力，所以我们需要用一个服务管理工具来管理Tornado的进程，supervisord是用Python实现的一款非常实用的进程管理工具。可以很方便的管理N过进程，且支持进程分组。Supervisord可以通过sudo easy_install supervisor安装，当然也可以通过Supervisord官网下载后setup.py install安装。&lt;/p&gt;
+
+&lt;p&gt;Step2: 给Django的站点增加一个Tornado的服务器文件（比如serv.py）&lt;/p&gt;
+
+&lt;p&gt;创建一个文件Serv.py在Django站点的根目录，内容如下：&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/ipconfiger/6142227.js&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;我这里通过第一个参数来指定Tornado服务监听的端口。这样比较灵活，这点我们在后面的步骤会用到。这个时候我们可以通过&lt;/p&gt;
+
+&lt;p&gt;python Serv.py 8000&lt;/p&gt;
+
+&lt;p&gt;这个命令来启动服务器&lt;/p&gt;
+
+&lt;p&gt;Step3: 配置Supervisord&lt;/p&gt;
+
+&lt;p&gt;第一步安装的Supervisord还没有配置，所以我们需要先创建一个配置文件的样板。在root权限下执行&lt;/p&gt;
+
+&lt;p&gt;echo_supervisord_conf &gt; /etc/supervisord.conf&lt;/p&gt;
+
+&lt;p&gt;这个时候在/etc/创建了配置文件，用vim打开这个文件，在配置文件的屁股后面加上以下这一段&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/ipconfiger/6142234.js&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;这个配置会启动4个Tornado的服务进程分别监听 8001,8002,8003,8004 这四个端口&lt;/p&gt;
+
+&lt;p&gt;command这一行是要执行的命令，这里是用 python /var/www/site/Serv.py 端口号来启动Tornado的服务进程 80%(process_num)02d 的用途是通过进程编号来生成端口号。下面的process_name这个参数也会用到。这里要指定的文件名就是上一步我们创建那个Serv.py文件&lt;/p&gt;
+
+&lt;p&gt;process_name是进程的名字，由于这里要启动4个进程，所以要用process_num来区分&lt;/p&gt;
+
+&lt;p&gt;umask是程序执行的权限参数&lt;/p&gt;
+
+&lt;p&gt;startsecs这个参数是程序启动的等待时间&lt;/p&gt;
+
+&lt;p&gt;stopwaitsecs这个参数是程序停止的等待时间&lt;/p&gt;
+
+&lt;p&gt;redirect_stderr这个参数将错误流重定向到std的流输出，这样可以省去一个日志文件的配置，当然也可以不用这个参数分开配置日志文件&lt;/p&gt;
+
+&lt;p&gt;stdout_logfile 这个参数是STD流输出日志文件的路径，Tornado会输出所有的请求和错误信息，通过这个可以统一做日志处理，分隔什么的，在程序里就只需要print到std流就行了。&lt;/p&gt;
+
+&lt;p&gt;numprocs 这个参数指定了进程的数量，这里是4，表明要启动4个Tornado进程&lt;/p&gt;
+
+&lt;p&gt;numprocs_start 这个参数指定了进程号的起始编号，这里是1，这样前面的command和process_name里的%(process_num)02d部分就会在执行的时候被替换为01~05的字符串&lt;/p&gt;
+
+&lt;p&gt;配置修改完成后:wq保存退出，执行：&lt;/p&gt;
+
+&lt;p&gt;supervisorctl reload&lt;/p&gt;
+
+&lt;p&gt;重新加载配置后，这些进程就启动起来了&lt;/p&gt;
+
+&lt;p&gt;Step4：修改配置Nginx&lt;/p&gt;
+
+&lt;p&gt;首先找到在vhost目录里你的站点配置文件，打开后，在头上增加upstream的内容&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/ipconfiger/6142241.js&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;然后在Server配置节里找到&lt;/p&gt;
+
+&lt;p&gt; location 这个配置节&lt;/p&gt;
+
+&lt;p&gt;将内部清空，在其中加入upstream的配置，变成如下样子&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/ipconfiger/6142265.js&quot;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;保存配置文件后执行  让nginx重启的指令 nginx -s reload(注意 nginx文件在不同发行版中位置有差别)&lt;/p&gt;
+
+&lt;p&gt;然后你就能够通过域名看到你的网站了，试试是不是快多了&lt;/p&gt;
+
+&lt;p&gt;注意：生产系统下开启多少个Tornado进程比较好呢，这个见仁见智了，据我压力测试的结果看来，用CPU核数x2的数量最好，再多 就浪费了没有提升（为什么乘2？因为有种CPU上的技术叫超线程）。我的VPS上用的4个进程。如果是8核IntelCPU要挖尽CPU潜能的话需要开16个进程&lt;/p&gt;
 </content>
  </entry>
  
