@@ -3740,5 +3740,6 @@ function regExpMatch(url, pattern) {    try { return new RegExp(pattern).test(ur
 	if (regExpMatch(url, "^[\\w\\-]+:\\/+(?!\\/)(?:[^\\/]+\\.)?zuola\\.com")) return 'PROXY 127.0.0.1:8087';
 	if (regExpMatch(url, "^[\\w\\-]+:\\/+(?!\\/)(?:[^\\/]+\\.)?zvereff\\.com")) return 'PROXY 127.0.0.1:8087';
 	if (regExpMatch(url, "^[\\w\\-]+:\\/+(?!\\/)(?:[^\\/]+\\.)?apple\\.com")) return 'PROXY 127.0.0.1:8087';
+	if (regExpMatch(url, "^[\\w\\-]+:\\/+(?!\\/)(?:[^\\/]+\\.)?dnbregistered\\.com\\.cn")) return 'PROXY 127.0.0.1:8087';
 	return 'DIRECT';
 }
