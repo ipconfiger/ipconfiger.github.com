@@ -71,7 +71,7 @@ title: 给Python程序员的CoreData简单指南
 
 ### model定义：
 
-```
+```python
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 
@@ -101,13 +101,14 @@ class User(Base):
     
 ### 初始化持久话和会话：
 
-	from sqlalchemy import create_engine
-	from sqlalchemy.orm import sessionmaker, scoped_session
-	
-	DB = create_engine("localhost", encoding="utf-8", pool_recycle=3600, echo=False)
-	Session = scoped_session(sessionmaker(bind=DB))
-	db = Session()
+```python
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
 
+DB = create_engine("localhost", encoding="utf-8", pool_recycle=3600, echo=False)
+Session = scoped_session(sessionmaker(bind=DB))
+db = Session()
+```
 
 ## CoreData版 初始化数据库环境：
 
@@ -121,56 +122,58 @@ class User(Base):
 #import <Foundation/Foundation.h>
 #import <CoreData/CoreData.h>
 
+```objectivec
+@interface User : NSManagedObject
 
-	@interface User : NSManagedObject
-	
-	@property (nonatomic, retain) NSString * avatar;
-	@property (nonatomic, retain) NSDecimalNumber * balance;
-	@property (nonatomic, retain) NSString * birthday;
-	@property (nonatomic, retain) NSString * desp;
-	@property (nonatomic) int16_t gender;
-	@property (nonatomic, retain) NSString * mobile;
-	@property (nonatomic, retain) NSString * nick;
-	@property (nonatomic) int32_t user_id;
-	
-	@end
+@property (nonatomic, retain) NSString * avatar;
+@property (nonatomic, retain) NSDecimalNumber * balance;
+@property (nonatomic, retain) NSString * birthday;
+@property (nonatomic, retain) NSString * desp;
+@property (nonatomic) int16_t gender;
+@property (nonatomic, retain) NSString * mobile;
+@property (nonatomic, retain) NSString * nick;
+@property (nonatomic) int32_t user_id;
 
+@end
+```
 
 ### 初始化持久话和会话：
 
 这一步顺序上和SqlAlchemy在顺序上有点区别，因为需要在持久话对象里传入数据模型对象，所以需要先实例化数据模型的对象
 
-	//返回实例化后的模型对象
-	- (NSManagedObjectModel *)managedObjectModel
-	{
-	    NSManagedObjectModel *managedObjectModel;
-	    NSURL *modelURL = [[NSBundle mainBundle] URLForResource:@"模型的名字" withExtension:@"momd"];
-	    managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
-	    return managedObjectModel;
-	}
-	
-	//返回实例化的持久话对象,对应到create_engine
-	- (NSPersistentStoreCoordinator *)persistentStoreCoordinator
-	{
-	    NSPersistentStoreCoordinator *persistentStoreCoordinator = nil;
-	    NSURL *storeURL = [[self applicationDocumentsDirectory] URLByAppendingPathComponent:@"agent.sqlite"];
-	
-	    NSError *error = nil;
-	    persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
-	    if (![persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error]) {
-	        NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
-	        abort();
-	    }
-	    return persistentStoreCoordinator;
-	}
+```objectivec
+//返回实例化后的模型对象
+- (NSManagedObjectModel *)managedObjectModel
+{
+    NSManagedObjectModel *managedObjectModel;
+    NSURL *modelURL = [[NSBundle mainBundle] URLForResource:@"模型的名字" withExtension:@"momd"];
+    managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
+    return managedObjectModel;
+}
 
-    //返回会话对象，对应到 Session()
-    - (NSManagedObjectContext *)createObjectContext:(NSPersistentStoreCoordinator*)coordinator
-	{
-	    NSManagedObjectContext *ctx = [[NSManagedObjectContext alloc] init];
-	    [ctx setPersistentStoreCoordinator:coordinator];
-	    return ctx;
-	}
+//返回实例化的持久话对象,对应到create_engine
+- (NSPersistentStoreCoordinator *)persistentStoreCoordinator
+{
+    NSPersistentStoreCoordinator *persistentStoreCoordinator = nil;
+    NSURL *storeURL = [[self applicationDocumentsDirectory] URLByAppendingPathComponent:@"agent.sqlite"];
+
+    NSError *error = nil;
+    persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
+    if (![persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error]) {
+        NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
+        abort();
+    }
+    return persistentStoreCoordinator;
+}
+
+   //返回会话对象，对应到 Session()
+   - (NSManagedObjectContext *)createObjectContext:(NSPersistentStoreCoordinator*)coordinator
+{
+    NSManagedObjectContext *ctx = [[NSManagedObjectContext alloc] init];
+    [ctx setPersistentStoreCoordinator:coordinator];
+    return ctx;
+}
+```
 
 相对来说Python的代码肯定短小很多了，Objective-C写起来比较啰嗦，但是其实简单的封装一下用起来也没有这么麻烦了。下回我们来说说封装的事情，这里就简单的丢到一个单例的类里就ok。Xcode的代码模版是把Coordinator和ObjectContext都放到了appDelegate对象里，但是必须
 
@@ -178,64 +181,66 @@ class User(Base):
     
 这样子才能访问，比较啰嗦，反正官方的例子都是放全局变量了，我们就用一个简单的单例代替：
 
-	static mmDAO *onlyInstance;
-	
-	@implementation mmDAO
-	+(mmDAO*)instance{
-	    static dispatch_once_t onceToken;
-	    dispatch_once(&onceToken, ^{
-	        onlyInstance = [[mmDAO alloc] init];
-	    });
-	    return onlyInstance;
-	}
-	
-	- (instancetype)init
-	{
-	    self = [super init];
-	    if (self) {
-	        [self initCoreDataStack];
-	    }
-	    return self;
-	}
-	
-	- (void)initCoreDataStack
-	{
-	    NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
-	    if (coordinator != nil) {
-	        _ObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
-	        [_ObjectContext setPersistentStoreCoordinator:coordinator];
-	    }
-	
-	}
-	
-	- (NSManagedObjectModel *)managedObjectModel
-	{
-	    NSManagedObjectModel *managedObjectModel;
-	    NSURL *modelURL = [[NSBundle mainBundle] URLForResource:@"XXX" withExtension:@"momd"];
-	    managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
-	    return managedObjectModel;
-	}
-	
-	- (NSPersistentStoreCoordinator *)persistentStoreCoordinator
-	{
-	    NSPersistentStoreCoordinator *persistentStoreCoordinator = nil;
-	    NSURL *storeURL = [[self applicationDocumentsDirectory] URLByAppendingPathComponent:@"agent.sqlite"];
-	
-	    NSError *error = nil;
-	    persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
-	    if (![persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error]) {
-	        NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
-	        abort();
-	    }
-	    return persistentStoreCoordinator;
-	}
-	
-	- (NSURL *)applicationDocumentsDirectory
-	{
-	    return [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
-	}
-	
-	@end
+```
+static mmDAO *onlyInstance;
+
+@implementation mmDAO
++(mmDAO*)instance{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        onlyInstance = [[mmDAO alloc] init];
+    });
+    return onlyInstance;
+}
+
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        [self initCoreDataStack];
+    }
+    return self;
+}
+
+- (void)initCoreDataStack
+{
+    NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
+    if (coordinator != nil) {
+        _ObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
+        [_ObjectContext setPersistentStoreCoordinator:coordinator];
+    }
+
+}
+
+- (NSManagedObjectModel *)managedObjectModel
+{
+    NSManagedObjectModel *managedObjectModel;
+    NSURL *modelURL = [[NSBundle mainBundle] URLForResource:@"XXX" withExtension:@"momd"];
+    managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
+    return managedObjectModel;
+}
+
+- (NSPersistentStoreCoordinator *)persistentStoreCoordinator
+{
+    NSPersistentStoreCoordinator *persistentStoreCoordinator = nil;
+    NSURL *storeURL = [[self applicationDocumentsDirectory] URLByAppendingPathComponent:@"agent.sqlite"];
+
+    NSError *error = nil;
+    persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
+    if (![persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error]) {
+        NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
+        abort();
+    }
+    return persistentStoreCoordinator;
+}
+
+- (NSURL *)applicationDocumentsDirectory
+{
+    return [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
+}
+
+@end
+```
 
 这样子只需要通过
 
