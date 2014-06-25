@@ -181,3 +181,6 @@ table.projects td.desc {
   #disqus_thread h3 {
     font-size: 19px; }
 
+table{
+    border: 1px;
+}
