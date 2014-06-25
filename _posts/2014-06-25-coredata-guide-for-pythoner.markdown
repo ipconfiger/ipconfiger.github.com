@@ -71,31 +71,33 @@ title: 给Python程序员的CoreData简单指南
 
 ### model定义：
 
-    from sqlalchemy import Column, Integer, String
-	from sqlalchemy.ext.declarative import declarative_base, declared_attr
-	
-	TABLEARGS = {
-	    'mysql_engine': 'InnoDB',
-	    'mysql_charset': 'utf8'
-	}
-	
-	class DeclaredBase(object):
-	    @declared_attr
-	    def __tablename__(cls):
-	        return cls.__name__.lower()
-	    id = Column(Integer, primary_key=True, autoincrement=True)
-	
-	Base = declarative_base(cls=DeclaredBase)
-	GroupBase = declarative_base(cls=DeclaredBase)
-	
-	class User(Base):
-	    user_id = Column(String(36), unique=True)
-	    user_name = Column(String(20))
-	    password = Column(String(36))
-	    gender = Column(Integer)
-	    online = Column(Boolean)
-	    last_update = Column(Integer)
-	    __table_args__ = TABLEARGS
+```
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
+
+TABLEARGS = {
+    'mysql_engine': 'InnoDB',
+    'mysql_charset': 'utf8'
+}
+
+class DeclaredBase(object):
+    @declared_attr
+    def __tablename__(cls):
+        return cls.__name__.lower()
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+Base = declarative_base(cls=DeclaredBase)
+GroupBase = declarative_base(cls=DeclaredBase)
+
+class User(Base):
+    user_id = Column(String(36), unique=True)
+    user_name = Column(String(20))
+    password = Column(String(36))
+    gender = Column(Integer)
+    online = Column(Boolean)
+    last_update = Column(Integer)
+    __table_args__ = TABLEARGS
+```
     
 ### 初始化持久话和会话：
 
