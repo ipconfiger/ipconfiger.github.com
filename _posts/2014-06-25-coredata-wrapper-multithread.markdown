@@ -11,7 +11,7 @@ title: 给Python程序员的CoreData简单指南
 
 数据映射层：
 
-<table>
+<table border="1">
     <tr>
     	<td width="50%">SqlAlchemy</td>
     	<td width="50%">CoreData</td>
@@ -28,7 +28,7 @@ title: 给Python程序员的CoreData简单指南
 
 持久化层：
 
-<table>
+<table border="1">
     <tr>
     	<td width="50%">SqlAlchemy</td>
     	<td width="50%">CoreData</td>
@@ -48,7 +48,7 @@ title: 给Python程序员的CoreData简单指南
 会话层：
 
 会话层保持了对象状态，对对象的操作都是通过这个层级完成的。
-<table>
+<table border="1">
     <tr>
     	<td width="50%">SqlAlchemy</td>
     	<td width="50%">CoreData</td>
