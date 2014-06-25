@@ -181,6 +181,8 @@ table.projects td.desc {
   #disqus_thread h3 {
     font-size: 19px; }
 
-table{
-    border: 1px;
+table td {
+    border-collapse: collapse;
+    border-spacing: 0;
+    padding: 5px;
 }
