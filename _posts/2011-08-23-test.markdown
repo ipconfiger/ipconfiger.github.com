@@ -1,4 +1,4 @@
---- 
+---
 layout: post
 title: A Test Post
 ---
@@ -11,6 +11,3 @@ Sed et lorem orci. Nullam consectetur elementum nibh, at aliquam metus adipiscin
     def func():
         doc={"id":123}
         print doc
-
-
-CREATE USER alex WITH PASSWORD '1qasw2';
