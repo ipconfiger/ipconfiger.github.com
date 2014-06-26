@@ -195,7 +195,11 @@ static mmDAO *onlyInstance;
             __block NSError *inner_error = nil;
             [_bgObjectContext save:&inner_error];
             if (handler){
-                handler(error);
+                //handler(error);
+                //这里需要返回主线程，不然在回调里操作界面会出错
+                [_mainObjectContext performBlock:^{
+                    handler(error);
+                }];
             }
         }];
     }
@@ -388,8 +392,9 @@ NSManagedObject+helper.m
 
 
 +(void)delobject:(id)object{
-    [[mmDAO instance].mainObjectContext delete:object];
-
+    //[[mmDAO instance].mainObjectContext delete:object];
+    //这里方法名写错了
+    [[mmDAO instance].mainObjectContext deleteObject:object];
 }
 
 @end
@@ -397,6 +402,9 @@ NSManagedObject+helper.m
 
 ```
 
+本文内容已经打包放在了github，有兴趣的可以fork下来直接用  [https://github.com/ipconfiger/asyncCoreDataWrapper](https://github.com/ipconfiger/asyncCoreDataWrapper)
+
+另，文中代码有两处错误，已经加上了注释，提前看了的同学记得以github为准。
 
 
 
